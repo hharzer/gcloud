@@ -10,4 +10,4 @@ source $1
 
 set -eu
 
-pgcli -h $DB_HOST -p $DB_PORT $DB_NAME $DB_SUPER_USER
+pgcli -h $DB_HOST -p $DB_PORT $DB_NAME $DB_USER
