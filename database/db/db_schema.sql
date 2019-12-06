@@ -26,6 +26,9 @@ CREATE TABLE identity.user (
         CHECK (email ~* '^[-_.a-z]{3,}@[-_.a-z]{3,}$')
 );
 
+CREATE INDEX ix_user_first_name ON identity.user (first_name);
+CREATE INDEX ix_user_last_name ON identity.user (last_name);
+
 CREATE TABLE identity.user_audit (
     user_audit_id uuid NOT NULL
         DEFAULT uuid_generate_v4(),
@@ -43,6 +46,8 @@ CREATE TABLE identity.user_audit (
     CONSTRAINT ch_user_audit_subject
         CHECK (length(subject) > 2)
 );
+
+CREATE INDEX ix_user_audit_user_id ON identity.user_audit (user_id);
 
 -- SELECT identity.put_user(
 --     a_subject := 'web',
