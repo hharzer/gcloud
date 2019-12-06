@@ -66,16 +66,17 @@ CREATE OR REPLACE FUNCTION identity.put_user(
 RETURNS uuid
 LANGUAGE sql AS $$
     WITH old_user AS (
-        SELECT ou.json
-        FROM (
-            SELECT row_to_json(u) json
-            FROM identity.user u
-            WHERE u.user_id = a_user_id
-            UNION ALL
-            SELECT row_to_json(row()) json
-        ) ou
-        ORDER BY length(ou.json::text) DESC
-        LIMIT 1
+        SELECT
+            CASE WHEN exists(
+                SELECT 1 FROM identity.user u WHERE u.user_id = a_user_id
+            ) THEN (
+                SELECT row_to_json(u)
+                FROM identity.user u
+                WHERE u.user_id = a_user_id
+            ) ELSE (
+                SELECT row_to_json(row())
+            )
+            END json
     ),
     user_entry AS (
         INSERT INTO identity.user AS u (
