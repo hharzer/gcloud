@@ -123,6 +123,12 @@ LANGUAGE sql AS $$
     RETURNING user_id;
 $$;
 
+-- SELECT *
+-- FROM identity.get_user_audit(
+--     a_user_id := '9d8ea030-86c1-49b3-833b-0c928e507206',
+--     a_subject := 'web'
+-- );
+
 CREATE OR REPLACE FUNCTION identity.get_user_audit(
     a_user_id uuid DEFAULT NULL,
     a_subject varchar(50) DEFAULT NULL,
@@ -153,4 +159,68 @@ LANGUAGE sql AS $$
         AND (a_till_ts IS NULL OR ua.audit_ts < a_till_ts)
     ORDER BY ua.user_id, ua.audit_ts
     LIMIT a_limit OFFSET a_offset;
+$$;
+
+-- SELECT *
+-- FROM identity.get_user(
+--     a_user_id := '9d8ea030-86c1-49b3-833b-0c928e507206',
+--     a_first_name := 'Volodymyr',
+--     a_last_name := 'Prokopyuk',
+--     a_birth_day := '1984-09-14',
+--     a_nationality := 'Ukrainian',
+--     a_email := 'volodymyrprokopyuk@gmail.com'
+-- );
+
+CREATE OR REPLACE FUNCTION identity.get_user(
+    a_user_id uuid DEFAULT NULL,
+    a_first_name varchar(50) DEFAULT NULL,
+    a_last_name varchar(50) DEFAULT NULL,
+    a_birth_day date DEFAULT NULL,
+    a_nationality varchar(50) DEFAULT NULL,
+    a_email varchar(50) DEFAULT NULL,
+    a_limit integer DEFAULT 100,
+    a_offset integer DEFAULT 0
+)
+RETURNS TABLE (
+    user_id uuid,
+    first_name varchar(50),
+    last_name varchar(50),
+    birth_day date,
+    nationality varchar(50),
+    email varchar(50)
+)
+LANGUAGE sql AS $$
+    SELECT u.user_id,
+        u.first_name,
+        u.last_name,
+        u.birth_day,
+        u.nationality,
+        u.email
+    FROM identity.user u
+    WHERE (a_user_id IS NULL OR u.user_id = a_user_id)
+        AND (a_first_name IS NULL OR u.first_name = a_first_name)
+        AND (a_last_name IS NULL OR u.last_name = a_last_name)
+        AND (a_birth_day IS NULL OR u.birth_day = a_birth_day)
+        AND (a_nationality IS NULL OR u.nationality = a_nationality)
+        AND (a_email IS NULL OR u.email = a_email)
+    ORDER BY u.user_id
+    LIMIT a_limit OFFSET a_offset;
+$$;
+
+-- SELECT identity.delete_user(
+--     a_user_id := '9d8ea030-86c1-49b3-833b-0c928e507206'
+-- );
+
+CREATE OR REPLACE FUNCTION identity.delete_user(
+    a_user_id uuid
+)
+RETURNS uuid
+LANGUAGE sql AS $$
+    WITH user_audit_entries AS (
+        DELETE FROM identity.user_audit
+        WHERE user_id = a_user_id
+    )
+    DELETE FROM identity.user
+    WHERE user_id = a_user_id
+    RETURNING user_id;
 $$;
