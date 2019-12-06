@@ -31,6 +31,7 @@ psql -f $DB_DIR/db_schema.sql -v ON_ERROR_STOP=1 -v ECHO=queries
 # Grant access to database
 source ./config/api.sh
 DB_ROLE=identity_api_role
+
 SQL_DROP_ROLE="DROP ROLE IF EXISTS $DB_USER, $DB_ROLE;"
 SQL_CREATE_ROLE="CREATE ROLE $DB_ROLE;
 GRANT USAGE ON SCHEMA identity TO $DB_ROLE;
