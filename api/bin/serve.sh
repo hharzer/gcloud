@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source ./bin/config.sh
+set -eu
 
 if [[ ! -f $1 ]]; then
     echo "ERROR: environment configuration is not provided"
@@ -9,6 +9,8 @@ fi
 
 source $1
 
-set -eu
+export NODE_PATH=.
 
-pgcli -h $DB_HOST -p $DB_PORT $DB_NAME $DB_USER
+export API_PORT=$API_PORT
+
+node main.js
