@@ -8,15 +8,17 @@
     "devDependencies": {
         "prettier": "1.19.1",
         "tslint": "5.20.1",
-        "typescript": "3.7.3"
+        "typescript": "3.7.3",
+        "@types/validator": "12.0.1",
+        "@types/restify": "8.4.2",
+        "@types/restify-errors": "4.3.3",
+        "@types/pg": "7.11.2"
     },
     "dependencies": {
         "moment": "2.24.0",
         "validator": "12.1.0",
-        "@types/validator": "12.0.1",
         "restify": "8.5.0",
-        "@types/restify": "8.4.2",
         "restify-errors": "8.0.1",
-        "@types/restify-errors": "4.3.3"
+        "pg": "7.14.0"
     }
 }
