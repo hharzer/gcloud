@@ -12,6 +12,9 @@
 
 - Entity CRUD API with extensive request validation, response pagination and entity
   partial updates via PATCH
+- Transactional database access
+- TODO: review 12-factor app guidelines (SIGTERM: -> server.close(), pg.pool.end())
+- TODO: pagination: Link: first, last, next, prev
 
 ## OAuth 2.0 and OpenId Connect identity and access management
 

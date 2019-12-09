@@ -1,7 +1,7 @@
 import validator from "validator";
 import {BadRequestError} from "restify-errors";
+import {validateOptional} from "util/validation";
 import {
-    validateOptional,
     validateFirstName,
     validateLastName,
     validateBirthDay,
@@ -10,9 +10,11 @@ import {
     validateLimit,
     validateOffset,
 } from "route/user/util/validation";
+import {getUser} from "route/user/util/database";
 
 const parseRequest = (req, res, next) => {
     const request: any = {};
+    request.subject = req.subject;
     try {
         if ("firstName" in req.query) {
             request.firstName = req.query.firstName;
@@ -44,10 +46,10 @@ const parseRequest = (req, res, next) => {
             request.offset = parseInt(offset, 10);
         }
         req.request = request;
+        next();
     } catch (error) {
         next(error);
     }
-    next();
 };
 
 const validateRequest = (req, res, next) => {
@@ -60,24 +62,32 @@ const validateRequest = (req, res, next) => {
         validateOptional(request, "email", validateEmail);
         validateOptional(request, "limit", validateLimit);
         validateOptional(request, "offset", validateOffset);
+        next();
     } catch (error) {
         next(error);
     }
-    next();
 };
 
-const executeRequest = (req, res, next) => {
-    next();
+const executeRequest = async (req, res, next) => {
+    try {
+        const user = req.request;
+        const users = await getUser(user);
+        const response: any = {};
+        response.data = users;
+        res.response = response;
+        next();
+    } catch (error) {
+        next(error);
+    }
 };
 
 const formatResponse = (req, res, next) => {
-    const response: any = {};
-    response.data = "GET /users";
+    const users = res.response;
     res.status(200);
-    res.json(response);
+    res.json(users);
     next();
 };
 
-export const addRoute = (server) => {
-    server.get("/users", parseRequest, validateRequest, executeRequest, formatResponse);
+export const addRoute = (server, route) => {
+    server.get(route, parseRequest, validateRequest, executeRequest, formatResponse);
 };

@@ -1,7 +1,6 @@
 import {BadRequestError} from "restify-errors";
+import {validateMandatory, validateOptional} from "util/validation";
 import {
-    validateMandatory,
-    validateOptional,
     validateUserId,
     validateFirstName,
     validateLastName,
@@ -9,9 +8,11 @@ import {
     validateNationality,
     validateEmail,
 } from "route/user/util/validation";
+import {patchUser} from "route/user/util/database";
 
 const parseRequest = (req, res, next) => {
     const request = req.body;
+    request.subject = req.subject;
     request.userId = req.params.userId;
     req.request = request;
     next();
@@ -36,26 +37,38 @@ const validateRequest = (req, res, next) => {
         if (!patchAttributes.some(Boolean)) {
             throw new BadRequestError("No attributes to patch");
         }
+        next();
     } catch (error) {
         next(error);
     }
-    next();
 };
 
-const executeRequest = (req, res, next) => {
-    next();
+const executeRequest = async (req, res, next) => {
+    try {
+        const user = req.request;
+        const userId = await patchUser(user);
+        if (userId === null) {
+            throw new BadRequestError(`Non-existing userId ${user.userId}`);
+        }
+        const response: any = {};
+        response.userId = userId;
+        res.response = response;
+        next();
+    } catch (error) {
+        next(error);
+    }
 };
 
 const formatResponse = (req, res, next) => {
     res.status(200);
-    res.header("Location", `${req.path()}`);
+    res.header("Location", req.path());
     res.send();
     next();
 };
 
-export const addRoute = (server) => {
+export const addRoute = (server, route) => {
     server.patch(
-        "/users/:userId",
+        `${route}/:userId`,
         parseRequest,
         validateRequest,
         executeRequest,

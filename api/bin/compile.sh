@@ -6,7 +6,7 @@ shopt -s globstar
 export PATH=./node_modules/.bin:$PATH
 export NODE_PATH=.
 
-readonly SOURCE_TARGET=$(ls *.ts route/**/*.ts)
+readonly SOURCE_TARGET=$(ls util/*.ts route/**/*.ts *.ts)
 
 function format {
     local target=${1?ERROR: mandatory target is not provided}

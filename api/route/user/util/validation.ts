@@ -2,22 +2,6 @@ import * as moment from "moment";
 import validator from "validator";
 import {BadRequestError} from "restify-errors";
 
-export const validateMandatory = (request, attribute, validate) => {
-    if (attribute in request) {
-        validate(request[attribute]);
-        return true;
-    }
-    throw new BadRequestError(`${attribute} is mandatory`);
-};
-
-export const validateOptional = (request, attribute, validate) => {
-    if (attribute in request) {
-        validate(request[attribute]);
-        return true;
-    }
-    return false;
-};
-
 export const validateUserId = (userId) => {
     if (!validator.isUUID(userId, 4)) {
         throw new BadRequestError(`Invalid userId ${userId}`);

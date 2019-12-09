@@ -9,7 +9,8 @@
         "noImplicitAny": false
     },
     "include": [
-        "*.ts",
-        "route/**/*.ts"
+        "util/*.ts",
+        "route/**/*.ts",
+        "*.ts"
     ]
 }

@@ -61,12 +61,12 @@ CREATE INDEX ix_user_audit_user_id ON identity.user_audit (user_id);
 
 CREATE OR REPLACE FUNCTION identity.put_user(
     a_subject varchar(50),
-    a_user_id uuid DEFAULT NULL,
-    a_first_name varchar(50) DEFAULT NULL,
-    a_last_name varchar(50) DEFAULT NULL,
-    a_birth_day date DEFAULT NULL,
-    a_nationality varchar(50) DEFAULT NULL,
-    a_email varchar(50) DEFAULT NULL
+    a_first_name varchar(50),
+    a_last_name varchar(50),
+    a_birth_day date,
+    a_nationality varchar(50),
+    a_email varchar(50),
+    a_user_id uuid DEFAULT NULL
 )
 RETURNS uuid
 LANGUAGE sql AS $$
@@ -101,11 +101,71 @@ LANGUAGE sql AS $$
             a_email
         )
         ON CONFLICT ON CONSTRAINT pk_user DO UPDATE SET
-            first_name = coalesce(excluded.first_name, u.first_name),
-            last_name = coalesce(excluded.last_name, u.last_name),
-            birth_day = coalesce(excluded.birth_day, u.birth_day),
-            nationality = coalesce(excluded.nationality, u.nationality),
-            email = coalesce(excluded.email, u.email)
+            first_name = excluded.first_name,
+            last_name = excluded.last_name,
+            birth_day = excluded.birth_day,
+            nationality = excluded.nationality,
+            email = excluded.email
+        RETURNING *
+    )
+    INSERT INTO identity.user_audit (
+        user_id,
+        subject,
+        old_value,
+        new_value
+    )
+    SELECT user_entry.user_id,
+        a_subject,
+        old_user.json,
+        row_to_json(user_entry)
+    FROM user_entry,
+        old_user
+    RETURNING user_id;
+$$;
+
+-- SELECT identity.patch_user(
+--     a_subject := 'web',
+--     a_user_id := '9d8ea030-86c1-49b3-833b-0c928e507206',
+--     a_first_name := 'Volodymyr',
+--     a_last_name := 'Prokopyuk',
+--     a_birth_day := '1984-09-14',
+--     a_nationality := 'Ukrainian',
+--     a_email := 'volodymyrprokopyuk@gmail.com'
+-- ) user_id;
+
+CREATE OR REPLACE FUNCTION identity.patch_user(
+    a_subject varchar(50),
+    a_user_id uuid,
+    a_first_name varchar(50) DEFAULT NULL,
+    a_last_name varchar(50) DEFAULT NULL,
+    a_birth_day date DEFAULT NULL,
+    a_nationality varchar(50) DEFAULT NULL,
+    a_email varchar(50) DEFAULT NULL
+)
+RETURNS uuid
+LANGUAGE sql AS $$
+    WITH old_user AS (
+        SELECT
+            CASE WHEN exists(
+                SELECT 1 FROM identity.user u WHERE u.user_id = a_user_id
+            ) THEN (
+                SELECT row_to_json(u)
+                FROM identity.user u
+                WHERE u.user_id = a_user_id
+            ) ELSE (
+                SELECT row_to_json(row())
+            )
+            END json
+    ),
+    user_entry AS (
+        UPDATE identity.user u
+        SET
+            first_name = coalesce(a_first_name, u.first_name),
+            last_name = coalesce(a_last_name, u.last_name),
+            birth_day = coalesce(a_birth_day, u.birth_day),
+            nationality = coalesce(a_nationality, u.nationality),
+            email = coalesce(a_email, u.email)
+        WHERE u.user_id = a_user_id
         RETURNING *
     )
     INSERT INTO identity.user_audit (
@@ -209,7 +269,7 @@ $$;
 
 -- SELECT identity.delete_user(
 --     a_user_id := '9d8ea030-86c1-49b3-833b-0c928e507206'
--- );
+-- ) user_id;
 
 CREATE OR REPLACE FUNCTION identity.delete_user(
     a_user_id uuid
