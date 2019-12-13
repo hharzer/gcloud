@@ -1,2 +1,3 @@
 api/main.js
 api/route/**/*.js
+api/util/*.js

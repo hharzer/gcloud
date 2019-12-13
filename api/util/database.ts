@@ -2,6 +2,8 @@ import {Pool} from "pg";
 
 const pool = new Pool();
 
+export const databasePool = () => pool;
+
 export const transaction = async (useClient) => {
     const client = await pool.connect();
     try {
