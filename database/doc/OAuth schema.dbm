@@ -1,0 +1,382 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+CAUTION: Do not modify this file unless you know what you are doing.
+         Unexpected results may occur if the code is changed deliberately.
+-->
+<dbmodel pgmodeler-ver="0.9.2-beta2" last-position="0,0" last-zoom="0.8" max-obj-count="9"
+	 default-schema="public" default-owner="postgres">
+<role name="vlad"
+      superuser="true"
+      inherit="true"
+      login="true"
+      encrypted="true"
+      password="********">
+</role>
+
+<role name="hydra"
+      inherit="true"
+      login="true"
+      encrypted="true"
+      password="********">
+</role>
+
+<role name="identity_api"
+      inherit="true"
+      login="true"
+      encrypted="true"
+      password="********">
+</role>
+
+<role name="identity_api_role"
+      inherit="true"
+      encrypted="true"
+      password="********">
+	<roles names="identity_api" role-type="member" />
+</role>
+
+<database name="identity" encoding="UTF8" lc-collate="en_US.UTF-8" lc-ctype="en_US.UTF-8" is-template="false" allow-conns="true">
+	<role name="vlad"/>
+	<tablespace name="pg_default"/>
+</database>
+
+<schema name="public" layer="0" rect-visible="true" fill-color="#e1e1e1" sql-disabled="true">
+</schema>
+
+<extension name="uuid-ossp" cur-version="1.1">
+	<schema name="public"/>
+	<comment><![CDATA[generate universally unique identifiers (UUIDs)]]></comment>
+</extension>
+
+<schema name="identity" layer="0" rect-visible="true" fill-color="#5b8f6a">
+	<role name="vlad"/>
+</schema>
+
+<table name="user" layer="0" collapse-mode="2" max-obj-count="4">
+	<schema name="identity"/>
+	<role name="vlad"/>
+	<position x="60" y="140"/>
+	<column name="user_id" not-null="true" default-value="uuid_generate_v4()">
+		<type name="uuid" length="0"/>
+	</column>
+	<column name="email" not-null="true">
+		<type name="character varying" length="50"/>
+	</column>
+	<column name="password_hash">
+		<type name="character varying" length="50"/>
+	</column>
+	<column name="active" not-null="true" default-value="true">
+		<type name="boolean" length="0"/>
+	</column>
+	<constraint name="pk_user" type="pk-constr" table="identity.&quot;user&quot;">
+		<columns names="user_id" ref-type="src-columns"/>
+	</constraint>
+	<constraint name="uq_user_email" type="uq-constr" table="identity.&quot;user&quot;">
+		<columns names="email" ref-type="src-columns"/>
+	</constraint>
+</table>
+
+<table name="device" layer="0" collapse-mode="2" max-obj-count="4">
+	<schema name="identity"/>
+	<role name="vlad"/>
+	<position x="80" y="500"/>
+	<column name="device_id" not-null="true" default-value="uuid_generate_v4()">
+		<type name="uuid" length="0"/>
+	</column>
+	<column name="user_id" not-null="true">
+		<type name="uuid" length="0"/>
+	</column>
+	<column name="device_fp" not-null="true">
+		<type name="character varying" length="50"/>
+	</column>
+	<column name="active" not-null="true" default-value="true">
+		<type name="boolean" length="0"/>
+	</column>
+	<constraint name="pk_device" type="pk-constr" table="identity.device">
+		<columns names="device_id" ref-type="src-columns"/>
+	</constraint>
+	<constraint name="uq_device_device_fp" type="uq-constr" table="identity.device">
+		<columns names="device_fp" ref-type="src-columns"/>
+	</constraint>
+</table>
+
+<schema name="oauth" layer="0" rect-visible="true" fill-color="#eab494">
+	<role name="vlad"/>
+</schema>
+
+<usertype name="client_type" configuration="enumeration">
+	<schema name="oauth"/>
+	<role name="vlad"/>
+	<enumeration values="CONFIDENTIAL,PUBLIC"/>
+</usertype>
+
+<table name="client" layer="0" collapse-mode="2" max-obj-count="7">
+	<schema name="oauth"/>
+	<role name="vlad"/>
+	<position x="580" y="40"/>
+	<column name="client_id" not-null="true" default-value="uuid_generate_v4()">
+		<type name="uuid" length="0"/>
+	</column>
+	<column name="client_secret">
+		<type name="character varying" length="50"/>
+	</column>
+	<column name="client_name" not-null="true">
+		<type name="character varying" length="50"/>
+	</column>
+	<column name="client_type" not-null="true">
+		<type name="oauth.client_type" length="0"/>
+	</column>
+	<column name="active" not-null="true" default-value="true">
+		<type name="boolean" length="0"/>
+	</column>
+	<column name="creation_ts" not-null="true" default-value="date_trunc('milliseconds'::text, CURRENT_TIMESTAMP)">
+		<type name="timestamp with time zone" length="0" with-timezone="true"/>
+	</column>
+	<constraint name="pk_client" type="pk-constr" table="oauth.client">
+		<columns names="client_id" ref-type="src-columns"/>
+	</constraint>
+</table>
+
+<table name="session" layer="0" collapse-mode="2" max-obj-count="9">
+	<schema name="oauth"/>
+	<role name="vlad"/>
+	<position x="1080" y="300"/>
+	<column name="session_id" not-null="true" default-value="uuid_generate_v4()">
+		<type name="uuid" length="0"/>
+	</column>
+	<column name="client_id" not-null="true">
+		<type name="uuid" length="0"/>
+	</column>
+	<column name="user_id">
+		<type name="uuid" length="0"/>
+	</column>
+	<column name="device_id">
+		<type name="uuid" length="0"/>
+	</column>
+	<column name="email" not-null="true">
+		<type name="character varying" length="50"/>
+	</column>
+	<column name="device_fp" not-null="true">
+		<type name="character varying" length="50"/>
+	</column>
+	<column name="creation_ts" not-null="true" default-value="date_trunc('milliseconds'::text, CURRENT_TIMESTAMP)">
+		<type name="timestamp with time zone" length="0" with-timezone="true"/>
+	</column>
+	<column name="termination_ts">
+		<type name="timestamp with time zone" length="0" with-timezone="true"/>
+	</column>
+	<constraint name="pk_session" type="pk-constr" table="oauth.session">
+		<columns names="session_id" ref-type="src-columns"/>
+	</constraint>
+</table>
+
+<table name="challenge" layer="0" collapse-mode="2" max-obj-count="7">
+	<schema name="oauth"/>
+	<role name="vlad"/>
+	<position x="1600" y="120"/>
+	<column name="challenge_id" not-null="true" default-value="uuid_generate_v4()">
+		<type name="uuid" length="0"/>
+	</column>
+	<column name="session_id" not-null="true">
+		<type name="uuid" length="0"/>
+	</column>
+	<column name="challenge" not-null="true">
+		<type name="character varying" length="50"/>
+	</column>
+	<column name="creation_ts" not-null="true" default-value="date_trunc('milliseconds'::text, CURRENT_TIMESTAMP)">
+		<type name="timestamp with time zone" length="0" with-timezone="true"/>
+	</column>
+	<column name="expiration_ts" not-null="true" default-value="date_trunc('milliseconds'::text, (CURRENT_TIMESTAMP + '00:15:00'::interval))">
+		<type name="timestamp with time zone" length="0" with-timezone="true"/>
+	</column>
+	<column name="confirmation_ts">
+		<type name="timestamp with time zone" length="0" with-timezone="true"/>
+	</column>
+	<constraint name="pk_challenge" type="pk-constr" table="oauth.challenge">
+		<columns names="challenge_id" ref-type="src-columns"/>
+	</constraint>
+	<constraint name="uq_challenge_challenge" type="uq-constr" table="oauth.challenge">
+		<columns names="challenge" ref-type="src-columns"/>
+	</constraint>
+</table>
+
+<table name="otp" layer="0" collapse-mode="2" max-obj-count="7">
+	<schema name="oauth"/>
+	<role name="vlad"/>
+	<position x="1600" y="460"/>
+	<column name="otp_id" not-null="true" default-value="uuid_generate_v4()">
+		<type name="uuid" length="0"/>
+	</column>
+	<column name="session_id" not-null="true">
+		<type name="uuid" length="0"/>
+	</column>
+	<column name="otp" not-null="true">
+		<type name="character varying" length="50"/>
+	</column>
+	<column name="creation_ts" not-null="true" default-value="date_trunc('milliseconds'::text, CURRENT_TIMESTAMP)">
+		<type name="timestamp with time zone" length="0" with-timezone="true"/>
+	</column>
+	<column name="expiration_ts" not-null="true" default-value="date_trunc('milliseconds'::text, (CURRENT_TIMESTAMP + '00:05:00'::interval))">
+		<type name="timestamp with time zone" length="0" with-timezone="true"/>
+	</column>
+	<column name="redemption_ts">
+		<type name="timestamp with time zone" length="0" with-timezone="true"/>
+	</column>
+	<constraint name="pk_otp" type="pk-constr" table="oauth.otp">
+		<columns names="otp_id" ref-type="src-columns"/>
+	</constraint>
+	<constraint name="uq_otp_otp" type="uq-constr" table="oauth.otp">
+		<columns names="otp" ref-type="src-columns"/>
+	</constraint>
+</table>
+
+<table name="access_token" layer="0" collapse-mode="2" max-obj-count="6">
+	<schema name="oauth"/>
+	<role name="vlad"/>
+	<position x="960" y="760"/>
+	<column name="access_token_id" not-null="true" default-value="uuid_generate_v4()">
+		<type name="uuid" length="0"/>
+	</column>
+	<column name="session_id" not-null="true">
+		<type name="uuid" length="0"/>
+	</column>
+	<column name="access_token" not-null="true">
+		<type name="character varying" length="50"/>
+	</column>
+	<column name="creation_ts" not-null="true" default-value="date_trunc('milliseconds'::text, CURRENT_TIMESTAMP)">
+		<type name="timestamp with time zone" length="0" with-timezone="true"/>
+	</column>
+	<column name="expiration_ts" not-null="true" default-value="date_trunc('milliseconds'::text, (CURRENT_TIMESTAMP + '00:15:00'::interval))">
+		<type name="timestamp with time zone" length="0" with-timezone="true"/>
+	</column>
+	<constraint name="pk_access_token" type="pk-constr" table="oauth.access_token">
+		<columns names="access_token_id" ref-type="src-columns"/>
+	</constraint>
+	<constraint name="uq_access_token_access_token" type="uq-constr" table="oauth.access_token">
+		<columns names="access_token" ref-type="src-columns"/>
+	</constraint>
+</table>
+
+<table name="refresh_token" layer="0" collapse-mode="2" max-obj-count="6">
+	<schema name="oauth"/>
+	<role name="vlad"/>
+	<position x="1360" y="760"/>
+	<column name="refresh_token_id" not-null="true" default-value="uuid_generate_v4()">
+		<type name="uuid" length="0"/>
+	</column>
+	<column name="session_id" not-null="true">
+		<type name="uuid" length="0"/>
+	</column>
+	<column name="refresh_token" not-null="true">
+		<type name="character varying" length="50"/>
+	</column>
+	<column name="creation_ts" not-null="true" default-value="date_trunc('milliseconds'::text, CURRENT_TIMESTAMP)">
+		<type name="timestamp with time zone" length="0" with-timezone="true"/>
+	</column>
+	<column name="expiration_ts" not-null="true" default-value="date_trunc('milliseconds'::text, (CURRENT_TIMESTAMP + '1 mon'::interval))">
+		<type name="timestamp with time zone" length="0" with-timezone="true"/>
+	</column>
+	<constraint name="pk_refresh_token" type="pk-constr" table="oauth.refresh_token">
+		<columns names="refresh_token_id" ref-type="src-columns"/>
+	</constraint>
+	<constraint name="uq_refresh_token_refresh_token" type="uq-constr" table="oauth.refresh_token">
+		<columns names="refresh_token" ref-type="src-columns"/>
+	</constraint>
+</table>
+
+<constraint name="fk_device_user_id" type="fk-constr" comparison-type="MATCH SIMPLE"
+	 upd-action="RESTRICT" del-action="RESTRICT" ref-table="identity.&quot;user&quot;" table="identity.device">
+	<columns names="user_id" ref-type="src-columns"/>
+	<columns names="user_id" ref-type="dst-columns"/>
+</constraint>
+
+<constraint name="fk_session_client_id" type="fk-constr" comparison-type="MATCH SIMPLE"
+	 upd-action="CASCADE" del-action="CASCADE" ref-table="oauth.client" table="oauth.session">
+	<columns names="client_id" ref-type="src-columns"/>
+	<columns names="client_id" ref-type="dst-columns"/>
+</constraint>
+
+<constraint name="fk_session_user_id" type="fk-constr" comparison-type="MATCH SIMPLE"
+	 upd-action="CASCADE" del-action="CASCADE" ref-table="identity.&quot;user&quot;" table="oauth.session">
+	<columns names="user_id" ref-type="src-columns"/>
+	<columns names="user_id" ref-type="dst-columns"/>
+</constraint>
+
+<constraint name="fk_session_device_id" type="fk-constr" comparison-type="MATCH SIMPLE"
+	 upd-action="CASCADE" del-action="CASCADE" ref-table="identity.device" table="oauth.session">
+	<columns names="device_id" ref-type="src-columns"/>
+	<columns names="device_id" ref-type="dst-columns"/>
+</constraint>
+
+<constraint name="fk_challenge_session_id" type="fk-constr" comparison-type="MATCH SIMPLE"
+	 upd-action="CASCADE" del-action="CASCADE" ref-table="oauth.session" table="oauth.challenge">
+	<columns names="session_id" ref-type="src-columns"/>
+	<columns names="session_id" ref-type="dst-columns"/>
+</constraint>
+
+<constraint name="fk_otp_session_id" type="fk-constr" comparison-type="MATCH SIMPLE"
+	 upd-action="CASCADE" del-action="CASCADE" ref-table="oauth.session" table="oauth.otp">
+	<columns names="session_id" ref-type="src-columns"/>
+	<columns names="session_id" ref-type="dst-columns"/>
+</constraint>
+
+<constraint name="fk_access_token_session_id" type="fk-constr" comparison-type="MATCH SIMPLE"
+	 upd-action="CASCADE" del-action="CASCADE" ref-table="oauth.session" table="oauth.access_token">
+	<columns names="session_id" ref-type="src-columns"/>
+	<columns names="session_id" ref-type="dst-columns"/>
+</constraint>
+
+<constraint name="fk_refresh_token_session_id" type="fk-constr" comparison-type="MATCH SIMPLE"
+	 upd-action="CASCADE" del-action="CASCADE" ref-table="oauth.session" table="oauth.refresh_token">
+	<columns names="session_id" ref-type="src-columns"/>
+	<columns names="session_id" ref-type="dst-columns"/>
+</constraint>
+
+<relationship name="rel_device_user" type="relfk" layer="0"
+	 custom-color="#a72253"
+	 src-table="identity.device"
+	 dst-table="identity.&quot;user&quot;" reference-fk="fk_device_user_id"
+	 src-required="false" dst-required="false"/>
+
+<relationship name="rel_session_client" type="relfk" layer="0"
+	 custom-color="#20f952"
+	 src-table="oauth.session"
+	 dst-table="oauth.client" reference-fk="fk_session_client_id"
+	 src-required="false" dst-required="false"/>
+
+<relationship name="rel_session_user" type="relfk" layer="0"
+	 custom-color="#57b40b"
+	 src-table="oauth.session"
+	 dst-table="identity.&quot;user&quot;" reference-fk="fk_session_user_id"
+	 src-required="false" dst-required="false"/>
+
+<relationship name="rel_session_device" type="relfk" layer="0"
+	 custom-color="#682c9e"
+	 src-table="oauth.session"
+	 dst-table="identity.device" reference-fk="fk_session_device_id"
+	 src-required="false" dst-required="false"/>
+
+<relationship name="rel_challenge_session" type="relfk" layer="0"
+	 custom-color="#7e3533"
+	 src-table="oauth.challenge"
+	 dst-table="oauth.session" reference-fk="fk_challenge_session_id"
+	 src-required="false" dst-required="false"/>
+
+<relationship name="rel_otp_session" type="relfk" layer="0"
+	 custom-color="#4c3e09"
+	 src-table="oauth.otp"
+	 dst-table="oauth.session" reference-fk="fk_otp_session_id"
+	 src-required="false" dst-required="false"/>
+
+<relationship name="rel_access_token_session" type="relfk" layer="0"
+	 custom-color="#ba0a31"
+	 src-table="oauth.access_token"
+	 dst-table="oauth.session" reference-fk="fk_access_token_session_id"
+	 src-required="false" dst-required="false"/>
+
+<relationship name="rel_refresh_token_session" type="relfk" layer="0"
+	 custom-color="#a86cdd"
+	 src-table="oauth.refresh_token"
+	 dst-table="oauth.session" reference-fk="fk_refresh_token_session_id"
+	 src-required="false" dst-required="false"/>
+
+</dbmodel>

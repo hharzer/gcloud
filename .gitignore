@@ -1,3 +1,4 @@
+database/doc/*.png
 api/main.js
 api/route/**/*.js
 api/util/*.js
