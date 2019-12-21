@@ -1,5 +1,2 @@
-database/doc/*.png
-api/main.js
-api/route/**/*.js
-api/util/*.js
-idp/main.js
+**/*.js
+**/*.png
