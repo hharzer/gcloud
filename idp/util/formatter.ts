@@ -6,6 +6,7 @@ export const formatHtml = (req, res, {template, locals}) => {
         return renderFile(`view/${template}.pug`, {...options, ...locals});
     } catch (error) {
         res.status(500);
+        res.setHeader("Content-Type", "application/json");
         return JSON.stringify({code: "RenderingError", message: error.message});
     }
 };

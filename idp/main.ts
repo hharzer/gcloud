@@ -11,7 +11,7 @@ server.use(plugins.queryParser());
 server.use(plugins.bodyParser());
 
 const ok = (req, res, next) => {
-    const response = {name: "Vlad"};
+    const response = {title: "Default title", name: "Vlad"};
     res.setHeader("Content-Type", "text/html");
     res.send({template: "index", locals: response});
     next();
