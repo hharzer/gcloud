@@ -18,7 +18,7 @@
 
 ## OAuth 2.0 and OpenId Connect identity and access management
 
-- TODO
+- Hyrda /keys: JWK (key/cert pair) for TLS (HTTPS), JWT (id_token)
 
 ## Performance monitoring and alerting
 
