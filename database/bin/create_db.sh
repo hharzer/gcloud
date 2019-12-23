@@ -28,7 +28,8 @@ psql -c "${SQL_CREATE_DB}" -v ON_ERROR_STOP=1 -v ECHO=queries
 export PGDATABASE=$DB_NAME
 
 # psql -f $DB_DIR/identity_schema.sql -v ON_ERROR_STOP=1 -v ECHO=queries
-psql -f $DB_DIR/oauth_schema.sql -v ON_ERROR_STOP=1 -v ECHO=queries
+# psql -f $DB_DIR/oauth_schema.sql -v ON_ERROR_STOP=1 -v ECHO=queries
+psql -f $DB_DIR/pagofx_schema.sql -v ON_ERROR_STOP=1 -v ECHO=queries
 
 # # Grant access to database
 # source ./config/api.sh
