@@ -37,6 +37,8 @@ CREATE TABLE util.legal_entity (
     branch_parent uuid,
     registration_country varchar(2) NOT NULL,
     operation_countries jsonb NOT NULL,
+    creation_ts timestamptz NOT NULL
+        DEFAULT date_trunc('milliseconds', current_timestamp),
     CONSTRAINT pk_legal_entity
         PRIMARY KEY (legal_entity_id),
     CONSTRAINT fk_legal_entity_branch_parent
@@ -56,8 +58,14 @@ CREATE TABLE customer.customer (
     email varchar(50) NOT NULL,
     legal_entity_id uuid NOT NULL,
     -- Residence country uniquely identifies the leagal entity that customer belongs to
-    residence_country varchar(2) NOT NULL,
+    first_name varchar(50) NOT NULL,
+    last_name varchar(50) NOT NULL,
+    birth_date date NOT NULL,
+    nationality varchar(2) NOT NULL,
+    residence varchar(2) NOT NULL,
     address jsonb NOT NULL,
+    registration_ts timestamptz NOT NULL
+        DEFAULT date_trunc('milliseconds', current_timestamp),
     CONSTRAINT pk_customer
         PRIMARY KEY (customer_id),
     CONSTRAINT uq_customer_email
@@ -66,7 +74,76 @@ CREATE TABLE customer.customer (
         FOREIGN KEY (legal_entity_id) REFERENCES util.legal_entity (legal_entity_id)
         ON UPDATE RESTRICT ON DELETE RESTRICT,
     CONSTRAINT fk_customer_residence_country
-        FOREIGN KEY (residence_country) REFERENCES util.country (alpha2_code)
+        FOREIGN KEY (residence) REFERENCES util.country (alpha2_code)
+        ON UPDATE RESTRICT ON DELETE RESTRICT,
+    CONSTRAINT fk_customer_nationality
+        FOREIGN KEY (nationality) REFERENCES util.country (alpha2_code)
+        ON UPDATE RESTRICT ON DELETE RESTRICT
+);
+
+CREATE TYPE customer.consent_permission_type AS
+ENUM ('PERMITTED', 'NOT_PERMITTED', 'BLOCKED');
+
+CREATE TABLE customer.customer_consent (
+    customer_consent_id uuid NOT NULL,
+    customer_id uuid NOT NULL,
+    feature_promotion_permission customer.consent_permission_type NOT NULL,
+    payment_process_permission customer.consent_permission_type NOT NULL,
+    help_to_improve_permission customer.consent_permission_type NOT NULL,
+    CONSTRAINT pk_customer_consent
+        PRIMARY KEY (customer_consent_id),
+    CONSTRAINT fk_customer_consent_customer_id
+        FOREIGN KEY (customer_id) REFERENCES customer.customer (customer_id)
+        ON UPDATE RESTRICT ON DELETE RESTRICT
+);
+
+CREATE TABLE customer.customer_device (
+    customer_device_id uuid NOT NULL,
+    customer_id uuid NOT NULL,
+    CONSTRAINT pk_customer_device
+        PRIMARY KEY (customer_device_id),
+    CONSTRAINT fk_customer_device_customer_id
+        FOREIGN KEY (customer_id) REFERENCES customer.customer (customer_id)
+        ON UPDATE RESTRICT ON DELETE RESTRICT
+);
+
+CREATE TABLE customer.customer_document (
+    customer_document_id uuid NOT NULL,
+    customer_id uuid NOT NULL,
+    CONSTRAINT pk_customer_document
+        PRIMARY KEY (customer_document_id),
+    CONSTRAINT fk_customer_document_customer_id
+        FOREIGN KEY (customer_id) REFERENCES customer.customer (customer_id)
+        ON UPDATE RESTRICT ON DELETE RESTRICT
+);
+
+CREATE TABLE customer.customer_review (
+    customer_review_id uuid NOT NULL,
+    customer_id uuid NOT NULL,
+    CONSTRAINT pk_customer_review
+        PRIMARY KEY (customer_review_id),
+    CONSTRAINT fk_customer_review_customer_id
+        FOREIGN KEY (customer_id) REFERENCES customer.customer (customer_id)
+        ON UPDATE RESTRICT ON DELETE RESTRICT
+);
+
+CREATE TABLE customer.customer_risk_profile (
+    customer_risk_profile_id uuid NOT NULL,
+    customer_id uuid NOT NULL,
+    CONSTRAINT pk_customer_risk_profile
+        PRIMARY KEY (customer_risk_profile_id),
+    CONSTRAINT fk_customer_risk_profile_customer_id
+        FOREIGN KEY (customer_id) REFERENCES customer.customer (customer_id)
+        ON UPDATE RESTRICT ON DELETE RESTRICT
+);
+
+CREATE TABLE customer.customer_business_profile (
+    customer_business_profile_id uuid NOT NULL,
+    customer_id uuid NOT NULL,
+    CONSTRAINT pk_customer_business_profile
+        PRIMARY KEY (customer_business_profile_id),
+    CONSTRAINT fk_customer_business_profile_customer_id
+        FOREIGN KEY (customer_id) REFERENCES customer.customer (customer_id)
         ON UPDATE RESTRICT ON DELETE RESTRICT
 );
 
@@ -77,6 +154,8 @@ CREATE TABLE customer.beneficiary (
     customer_id uuid NOT NULL,
     full_name varchar(50) NOT NULL,
     iban varchar(50) NOT NULL,
+    registration_ts timestamptz NOT NULL
+        DEFAULT date_trunc('milliseconds', current_timestamp),
     CONSTRAINT pk_beneficiary
         PRIMARY KEY (beneficiary_id),
     CONSTRAINT fk_beneficiary_customer_id
@@ -100,6 +179,8 @@ CREATE TABLE payment.quote (
     rate numeric(10, 4) NOT NULL,
     term_amount numeric(10, 2) NOT NULL,
     term_currency varchar(3) NOT NULL,
+    creation_ts timestamptz NOT NULL
+        DEFAULT date_trunc('milliseconds', current_timestamp),
     CONSTRAINT pk_quote
         PRIMARY KEY (quote_id),
     CONSTRAINT fk_quote_customer_id
@@ -126,6 +207,8 @@ CREATE TABLE payment.payment (
     customer_id uuid NOT NULL,
     beneficiary_id uuid NOT NULL,
     quote_id uuid NOT NULL,
+    creation_ts timestamptz NOT NULL
+        DEFAULT date_trunc('milliseconds', current_timestamp),
     CONSTRAINT fk_payment
         PRIMARY KEY (payment_id),
     CONSTRAINT uq_payment_payment_reference
@@ -162,7 +245,7 @@ CREATE TABLE payment.payment_status (
     payment_status payment.payment_status_type NOT NULL,
     payment_status_details jsonb,
     payment_status_reason jsonb,
-    creation_ts timestamptz
+    creation_ts timestamptz NOT NULL
         DEFAULT date_trunc('milliseconds', current_timestamp),
     CONSTRAINT pk_payment_status
         PRIMARY KEY (payment_status_id),
@@ -183,7 +266,7 @@ CREATE TABLE payment.payment_funding_authorization (
     payment_id uuid NOT NULL,
     payment_status payment.payment_status_type NOT NULL,
     funding_authorization jsonb NOT NULL,
-    creation_ts timestamptz
+    authorization_ts timestamptz NOT NULL
         DEFAULT date_trunc('milliseconds', current_timestamp),
     CONSTRAINT pk_payment_funding_authorization
         PRIMARY KEY (payment_finding_authorization_id),
@@ -197,7 +280,7 @@ CREATE TABLE payment.payment_funding_capture (
     payment_id uuid NOT NULL,
     payment_status payment.payment_status_type NOT NULL,
     funding_capture jsonb NOT NULL,
-    creation_ts timestamptz
+    capture_ts timestamptz NOT NULL
         DEFAULT date_trunc('milliseconds', current_timestamp),
     CONSTRAINT pk_payment_funding_capture
         PRIMARY KEY (payment_finding_capture_id),
@@ -217,8 +300,7 @@ CREATE TABLE payment.payment_fx (
     buy_currency varchar(3) NOT NULL,
     fx_reference varchar(50) NOT NULL,
     payment_status payment.payment_status_type NOT NULL,
-    trading_ts timestamptz,
-    creation_ts timestamptz
+    trading_ts timestamptz NOT NULL
         DEFAULT date_trunc('milliseconds', current_timestamp),
     CONSTRAINT pk_payment_fx
         PRIMARY KEY (payment_fx_id),
@@ -240,6 +322,8 @@ CREATE TABLE payment.payment_settlement (
     payment_settlement jsonb NOT NULL,
     payment_provider uuid NOT NULL,
     payment_provider_reference varchar(50) NOT NULL,
+    settlement_ts timestamptz NOT NULL
+        DEFAULT date_trunc('milliseconds', current_timestamp),
     CONSTRAINT pk_payment_settlement
         PRIMARY KEY (payment_settlement_id),
     CONSTRAINT fk_payment_settlement_payment_id
@@ -251,3 +335,29 @@ CREATE TABLE payment.payment_settlement (
     CONSTRAINT uq_payment_payment_provider_payment_provider_reference
         UNIQUE (payment_provider, payment_provider_reference)
 );
+
+CREATE TYPE payment.payment_check_status_type AS
+ENUM ('INITIATED', 'UNDER_REVIEW', 'ACCEPTED', 'REJECTED');
+
+CREATE TABLE payment.payment_check (
+    payment_check_id uuid NOT NULL,
+    customer_id uuid NOT NULL,
+    beneficiary_id uuid NOT NULL,
+    payment_id uuid NOT NULL,
+    payment_check_status_details jsonb,
+    payment_check_status payment.payment_check_status_type,
+    payment_check_status_reason jsonb,
+    check_ts timestamptz NOT NULL
+        DEFAULT date_trunc('milliseconds', current_timestamp),
+    CONSTRAINT pk_payment_check
+        PRIMARY KEY (payment_check_id),
+    CONSTRAINT fk_payment_check_customer_id
+        FOREIGN KEY (customer_id) REFERENCES customer.customer (customer_id)
+        ON UPDATE RESTRICT ON DELETE RESTRICT,
+    CONSTRAINT fk_payment_check_beneficiary_id
+        FOREIGN KEY (beneficiary_id) REFERENCES customer.beneficiary (beneficiary_id)
+        ON UPDATE RESTRICT ON DELETE RESTRICT,
+    CONSTRAINT fk_payment_check_payment_id
+        FOREIGN KEY (payment_id) REFERENCES payment.payment (payment_id)
+        ON UPDATE RESTRICT ON DELETE RESTRICT
+)
