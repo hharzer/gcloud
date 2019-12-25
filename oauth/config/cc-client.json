@@ -7,7 +7,7 @@
     "client_id": "cc-client",
     "client_secret": "ClientCredentialsSecret",
     "token_endpoint_auth_method": "client_secret_basic",
-    "scope": "custom",
+    "scope": "custom1 custom2",
     "grant_types": ["client_credentials"],
     "response_types": ["token"]
 }

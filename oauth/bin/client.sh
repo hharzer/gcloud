@@ -33,9 +33,9 @@ function delete_all_clients {
     done
 }
 
-get_all_clients
+# get_all_clients
 # get_client ac-client
 # create_client config/ac-client.json
-# create_client config/cc-client.json
+create_client config/cc-client.json
 # delete_client ac-client
 # delete_all_clients

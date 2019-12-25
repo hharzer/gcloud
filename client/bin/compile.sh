@@ -8,7 +8,7 @@ source ../bin/util.sh
 export PATH=./node_modules/.bin:$PATH
 export NODE_PATH=.
 
-readonly SOURCE_TARGET=$(ls util/*.ts route/**/*.ts *.ts)
+readonly SOURCE_TARGET=$(ls util/*.ts *.ts)
 
 format "${SOURCE_TARGET}"
 validate "${SOURCE_TARGET}"

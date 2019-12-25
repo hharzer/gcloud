@@ -1,0 +1,17 @@
+{
+    "name": "oauth2-client",
+    "version": "0.1.0",
+    "description": "OAuth 2.0 client",
+    "main": "main.js",
+    "author": "Volodymyr Prokopyuk",
+    "license": "MIT",
+    "devDependencies": {
+        "prettier": "1.19.1",
+        "tslint": "5.20.1",
+        "typescript": "3.7.3",
+        "@types/got": "9.6.9"
+    },
+    "dependencies": {
+        "got": "10.2.0"
+    }
+}
