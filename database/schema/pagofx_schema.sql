@@ -1,10 +1,10 @@
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 CREATE SCHEMA reference;
 
 CREATE TABLE reference.country (
     country_id uuid NOT NULL
-        DEFAULT uuid_generate_v4(),
+        DEFAULT gen_random_uuid(),
     alpha2_code varchar(2) NOT NULL,
     alpha3_code varchar(3) NOT NULL,
     full_name varchar(50) NOT NULL,
@@ -17,7 +17,8 @@ CREATE TABLE reference.country (
 );
 
 CREATE TABLE reference.currency (
-    currency_id uuid NOT NULL,
+    currency_id uuid NOT NULL
+        DEFAULT gen_random_uuid(),
     iso_code varchar(3) NOT NULL,
     full_name varchar(50) NOT NULL,
     currency_symbol varchar(5) NOT NULL,
@@ -31,7 +32,8 @@ CREATE TABLE reference.currency (
 CREATE SCHEMA payment;
 
 CREATE TABLE payment.legal_entity (
-    legal_entity_id uuid NOT NULL,
+    legal_entity_id uuid NOT NULL
+        DEFAULT gen_random_uuid(),
     full_name varchar(50) NOT NULL,
     licence_number varchar(50) NOT NULL,
     address jsonb NOT NULL,
@@ -56,7 +58,7 @@ CREATE SCHEMA customer;
 
 CREATE TABLE customer.customer (
     customer_id uuid NOT NULL
-        DEFAULT uuid_generate_v4(),
+        DEFAULT gen_random_uuid(),
     email varchar(50) NOT NULL,
     first_name varchar(50) NOT NULL,
     last_name varchar(50) NOT NULL,
@@ -106,7 +108,8 @@ ENUM (
 );
 
 CREATE TABLE customer.customer_onboarding (
-    customer_onboarding_id uuid NOT NULL,
+    customer_onboarding_id uuid NOT NULL
+        DEFAULT gen_random_uuid(),
     onboarding_stage customer.onboarding_stage_type NOT NULL,
     onboarding_stage_details jsonb NOT NULL,
     onboarding_stage_ts timestamptz NOT NULL
@@ -131,7 +134,8 @@ CREATE TYPE customer.consent_permission_type AS
 ENUM ('PERMITTED', 'NOT_PERMITTED', 'BLOCKED');
 
 CREATE TABLE customer.customer_consent (
-    customer_consent_id uuid NOT NULL,
+    customer_consent_id uuid NOT NULL
+        DEFAULT gen_random_uuid(),
     feature_promotion_permission customer.consent_permission_type NOT NULL,
     payment_process_permission customer.consent_permission_type NOT NULL,
     help_to_improve_permission customer.consent_permission_type NOT NULL,
@@ -144,7 +148,8 @@ CREATE TABLE customer.customer_consent (
 );
 
 CREATE TABLE customer.customer_device (
-    customer_device_id uuid NOT NULL,
+    customer_device_id uuid NOT NULL
+        DEFAULT gen_random_uuid(),
     device_type varchar(50) NOT NULL,
     registration_token varchar(50) NOT NULL,
     customer_id uuid NOT NULL,
@@ -156,7 +161,8 @@ CREATE TABLE customer.customer_device (
 );
 
 CREATE TABLE customer.customer_document (
-    customer_document_id uuid NOT NULL,
+    customer_document_id uuid NOT NULL
+        DEFAULT gen_random_uuid(),
     document_type varchar(50) NOT NULL,
     document_dek varchar(50) NOT NULL,
     customer_id uuid NOT NULL,
@@ -168,7 +174,8 @@ CREATE TABLE customer.customer_document (
 );
 
 CREATE TABLE customer.customer_review (
-    customer_review_id uuid NOT NULL,
+    customer_review_id uuid NOT NULL
+        DEFAULT gen_random_uuid(),
     review_type varchar(50) NOT NULL,
     review_details jsonb NOT NULL,
     customer_id uuid NOT NULL,
@@ -180,7 +187,8 @@ CREATE TABLE customer.customer_review (
 );
 
 CREATE TABLE customer.customer_risk_profile (
-    customer_risk_profile_id uuid NOT NULL,
+    customer_risk_profile_id uuid NOT NULL
+        DEFAULT gen_random_uuid(),
     risk_profile_details jsonb NOT NULL,
     customer_id uuid NOT NULL,
     CONSTRAINT pk_customer_risk_profile
@@ -191,7 +199,8 @@ CREATE TABLE customer.customer_risk_profile (
 );
 
 CREATE TABLE customer.customer_business_profile (
-    customer_business_profile_id uuid NOT NULL,
+    customer_business_profile_id uuid NOT NULL
+        DEFAULT gen_random_uuid(),
     business_profile_details jsonb NOT NULL,
     customer_id uuid NOT NULL,
     CONSTRAINT pk_customer_business_profile
@@ -203,7 +212,7 @@ CREATE TABLE customer.customer_business_profile (
 
 CREATE TABLE customer.beneficiary (
     beneficiary_id uuid NOT NULL
-        DEFAULT uuid_generate_v4(),
+        DEFAULT gen_random_uuid(),
     full_name varchar(50) NOT NULL,
     iban varchar(50) NOT NULL,
     registration_ts timestamptz NOT NULL
@@ -220,7 +229,8 @@ CREATE TYPE payment.funding_method_type AS
 ENUM ('FUNDING_METHOD_1', 'FUNDING_METHOD_2');
 
 CREATE TABLE payment.base_currency (
-    base_currency_id uuid NOT NULL,
+    base_currency_id uuid NOT NULL
+        DEFAULT gen_random_uuid(),
     base_currency varchar(3),
     funding_method payment.funding_method_type NOT NULL,
     lower_bound numeric(10, 2) NOT NULL,
@@ -240,7 +250,8 @@ CREATE TYPE payment.payment_method_type AS
 ENUM ('PAYMENT_METHOD_1', 'PAYMENT_METHOD_2');
 
 CREATE TABLE payment.term_currency (
-    term_currency_id uuid NOT NULL,
+    term_currency_id uuid NOT NULL
+        DEFAULT gen_random_uuid(),
     term_currency varchar(3),
     payment_method payment.payment_method_type NOT NULL,
     lower_bound numeric(10, 2) NOT NULL,
@@ -262,7 +273,8 @@ CREATE TABLE payment.term_currency (
 );
 
 CREATE TABLE payment.rate (
-    rate_id uuid NOT NULL,
+    rate_id uuid NOT NULL
+        DEFAULT gen_random_uuid(),
     base_currency varchar(3) NOT NULL,
     rate numeric(10, 4) NOT NULL,
     term_currency varchar(3) NOT NULL,
@@ -283,7 +295,7 @@ CREATE TABLE payment.rate (
 
 CREATE TABLE payment.quote (
     quote_id uuid NOT NULL
-        DEFAULT uuid_generate_v4(),
+        DEFAULT gen_random_uuid(),
     base_amount numeric(10, 2) NOT NULL,
     base_currency varchar(3) NOT NULL,
     fixed_fee numeric(10, 2) NOT NULL,
@@ -315,7 +327,8 @@ CREATE TABLE payment.quote (
 );
 
 CREATE TABLE payment.payment (
-    payment_id uuid NOT NULL,
+    payment_id uuid NOT NULL
+        DEFAULT gen_random_uuid(),
     payment_reference varchar(50) NOT NULL,
     customer_id uuid NOT NULL,
     beneficiary_id uuid NOT NULL,
@@ -353,7 +366,8 @@ ENUM (
 );
 
 CREATE TABLE payment.payment_status (
-    payment_status_id uuid NOT NULL,
+    payment_status_id uuid NOT NULL
+        DEFAULT gen_random_uuid(),
     payment_status payment.payment_status_type NOT NULL,
     payment_status_details jsonb NOT NULL,
     payment_status_ts timestamptz NOT NULL
@@ -374,7 +388,8 @@ ADD CONSTRAINT fk_payment_is_in_last_payment_status
     ON UPDATE RESTRICT ON DELETE RESTRICT;
 
 CREATE TABLE payment.funding_authorization (
-    funding_authorization_id uuid NOT NULL,
+    funding_authorization_id uuid NOT NULL
+        DEFAULT gen_random_uuid(),
     payment_status payment.payment_status_type NOT NULL,
     funding_authorization_details jsonb NOT NULL,
     funding_authorization_ts timestamptz NOT NULL
@@ -388,7 +403,8 @@ CREATE TABLE payment.funding_authorization (
 );
 
 CREATE TABLE payment.funding_capture (
-    funding_capture_id uuid NOT NULL,
+    funding_capture_id uuid NOT NULL
+        DEFAULT gen_random_uuid(),
     payment_status payment.payment_status_type NOT NULL,
     funding_capture_details jsonb NOT NULL,
     funding_capture_ts timestamptz NOT NULL
@@ -402,7 +418,8 @@ CREATE TABLE payment.funding_capture (
 );
 
 CREATE TABLE payment.payment_fx (
-    payment_fx_id uuid NOT NULL,
+    payment_fx_id uuid NOT NULL
+        DEFAULT gen_random_uuid(),
     sell_amount numeric(10, 2) NOT NULL,
     sell_currency varchar(3) NOT NULL,
     mid_market_rate numeric(10, 4) NOT NULL,
@@ -428,7 +445,8 @@ CREATE TABLE payment.payment_fx (
 );
 
 CREATE TABLE payment.payment_settlement (
-    payment_settlement_id uuid NOT NULL,
+    payment_settlement_id uuid NOT NULL
+        DEFAULT gen_random_uuid(),
     payment_status payment.payment_status_type NOT NULL,
     payment_provider_id uuid NOT NULL,
     payment_provider_reference varchar(50) NOT NULL,
@@ -453,7 +471,8 @@ CREATE TYPE payment.payment_check_status_type AS
 ENUM ('INITIATED', 'UNDER_REVIEW', 'ACCEPTED', 'REJECTED');
 
 CREATE TABLE payment.payment_check (
-    payment_check_id uuid NOT NULL,
+    payment_check_id uuid NOT NULL
+        DEFAULT gen_random_uuid(),
     payment_check_status payment.payment_check_status_type NOT NULL,
     payment_check_status_details jsonb NOT NULL,
     payment_check_ts timestamptz NOT NULL
@@ -525,7 +544,8 @@ ENUM (
 );
 
 CREATE TABLE ledger.account (
-    account_id uuid NOT NULL,
+    account_id uuid NOT NULL
+        DEFAULT gen_random_uuid(),
     account_type ledger.account_type NOT NULL,
     currency varchar(3) NOT NULL,
     creation_ts timestamptz NOT NULL
@@ -542,7 +562,8 @@ CREATE TABLE ledger.account (
 );
 
 CREATE TABLE ledger.external_account (
-    external_account_id uuid NOT NULL,
+    external_account_id uuid NOT NULL
+        DEFAULT gen_random_uuid(),
     account_number varchar(50) NOT NULL,
     accounting_code varchar(50) NOT NULL,
     suplementary_reference varchar(50) NOT NULL,
@@ -562,7 +583,8 @@ CREATE TABLE ledger.external_account (
 );
 
 CREATE TABLE ledger.account_balance (
-    account_balance_id uuid NOT NULL,
+    account_balance_id uuid NOT NULL
+        DEFAULT gen_random_uuid(),
     balance_date date NOT NULL
         DEFAULT date_trunc('days', current_timestamp),
     opening_balance numeric(10, 2) NOT NULL,
@@ -580,7 +602,8 @@ CREATE TABLE ledger.account_balance (
 );
 
 CREATE TABLE ledger.account_transaction (
-    account_transaction_id uuid NOT NULL,
+    account_transaction_id uuid NOT NULL
+        DEFAULT gen_random_uuid(),
     subject varchar(50) NOT NULL,
     currency varchar(3) NOT NULL,
     transaction_ts timestamptz NOT NULL
@@ -597,7 +620,8 @@ CREATE TABLE ledger.account_transaction (
 );
 
 CREATE TABLE ledger.transaction_entry (
-    transaction_entry_id uuid NOT NULL,
+    transaction_entry_id uuid NOT NULL
+        DEFAULT gen_random_uuid(),
     entry_amount numeric(10, 2) NOT NULL,
     entry_reference varchar(50),
     account_id uuid NOT NULL,
@@ -616,7 +640,8 @@ CREATE TABLE ledger.transaction_entry (
 CREATE SCHEMA reconciliation;
 
 CREATE TABLE reconciliation.external_transaction (
-    external_transaction_id uuid NOT NULL,
+    external_transaction_id uuid NOT NULL
+        DEFAULT gen_random_uuid(),
     transaction_amount numeric(10, 2) NOT NULL,
     transaction_reference varchar(50) NOT NULL,
     transaction_details jsonb NOT NULL,
@@ -631,7 +656,8 @@ CREATE TABLE reconciliation.external_transaction (
 );
 
 CREATE TABLE reconciliation.reconciliation (
-    reconciliation_id uuid NOT NULL,
+    reconciliation_id uuid NOT NULL
+        DEFAULT gen_random_uuid(),
     subject varchar(50) NOT NULL,
     reconciliation_details jsonb,
     reconciliation_ts timestamptz NOT NULL
