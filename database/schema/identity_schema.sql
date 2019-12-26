@@ -1,10 +1,10 @@
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 CREATE SCHEMA identity;
 
 CREATE TABLE identity.user (
     user_id uuid NOT NULL
-        DEFAULT uuid_generate_v4(),
+        DEFAULT gen_random_uuid(),
     first_name varchar(50) NOT NULL,
     last_name varchar(50) NOT NULL,
     birth_day date NOT NULL,
@@ -31,7 +31,7 @@ CREATE INDEX ix_user_last_name ON identity.user (last_name);
 
 CREATE TABLE identity.user_audit (
     user_audit_id uuid NOT NULL
-        DEFAULT uuid_generate_v4(),
+        DEFAULT gen_random_uuid(),
     user_id uuid NOT NULL,
     subject varchar(50) NOT NULL,
     old_value jsonb NOT NULL,
@@ -40,7 +40,7 @@ CREATE TABLE identity.user_audit (
         DEFAULT date_trunc('milliseconds', current_timestamp),
     CONSTRAINT pk_user_audit
         PRIMARY KEY (user_audit_id),
-    CONSTRAINT fk_user_audit_user_audit_id
+    CONSTRAINT fk_user_audit_tracks_changes_to_user
         FOREIGN KEY (user_id) REFERENCES identity.user (user_id)
         ON UPDATE RESTRICT ON DELETE RESTRICT,
     CONSTRAINT ch_user_audit_subject
@@ -93,7 +93,7 @@ LANGUAGE sql AS $$
             email
         )
         VALUES (
-            coalesce(a_user_id, uuid_generate_v4()),
+            coalesce(a_user_id, gen_random_uuid()),
             a_first_name,
             a_last_name,
             a_birth_day,

@@ -1,10 +1,10 @@
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 CREATE SCHEMA identity;
 
 CREATE TABLE identity.user (
     user_id uuid NOT NULL
-        DEFAULT uuid_generate_v4(),
+        DEFAULT gen_random_uuid(),
     -- User is uniquely identified by an email
     email varchar(50) NOT NULL,
     -- User may have optional password
@@ -20,7 +20,7 @@ CREATE TABLE identity.user (
 
 CREATE TABLE identity.device (
     device_id uuid NOT NULL
-        DEFAULT uuid_generate_v4(),
+        DEFAULT gen_random_uuid(),
     user_id uuid NOT NULL,
     -- Device is uniquely identified by device fingerprint
     device_fp varchar(50) NOT NULL,
@@ -32,7 +32,7 @@ CREATE TABLE identity.device (
     CONSTRAINT uq_device_device_fp
         UNIQUE (device_fp),
     -- User can have multiple devices
-    CONSTRAINT fk_device_user_id
+    CONSTRAINT fk_device_belongs_to_user
         FOREIGN KEY (user_id) REFERENCES identity.user (user_id)
         ON UPDATE RESTRICT ON DELETE RESTRICT
 );
@@ -43,11 +43,11 @@ CREATE SCHEMA oauth;
 -- PUBLIC client can only have client_id as client_secret confidentiality
 -- cannot be enforced by web and mobile applications
 CREATE TYPE oauth.client_type AS
-    ENUM ('CONFIDENTIAL', 'PUBLIC');
+ENUM ('CONFIDENTIAL', 'PUBLIC');
 
 CREATE TABLE oauth.client (
     client_id uuid NOT NULL
-        DEFAULT uuid_generate_v4(),
+        DEFAULT gen_random_uuid(),
     -- Optional client secret only for CONFIDENTIAL clients
     client_secret varchar(50),
     client_name varchar(50) NOT NULL,
@@ -63,7 +63,7 @@ CREATE TABLE oauth.client (
 
 CREATE TABLE oauth.session (
     session_id uuid NOT NULL
-        DEFAULT uuid_generate_v4(),
+        DEFAULT gen_random_uuid(),
     client_id uuid NOT NULL,
     user_id uuid,
     device_id uuid,
@@ -78,22 +78,22 @@ CREATE TABLE oauth.session (
     CONSTRAINT pk_session
         PRIMARY KEY (session_id),
     -- Session is related to a client
-    CONSTRAINT fk_session_client_id
+    CONSTRAINT fk_session_involves_to_client
         FOREIGN KEY (client_id) REFERENCES oauth.client (client_id)
         ON UPDATE CASCADE ON DELETE CASCADE,
     -- Session is related to a user
-    CONSTRAINT fk_session_user_id
+    CONSTRAINT fk_session_belongs_to_user
         FOREIGN KEY (user_id) REFERENCES identity.user (user_id)
         ON UPDATE CASCADE ON DELETE CASCADE,
     -- Session is related to a device
-    CONSTRAINT fk_session_device_id
+    CONSTRAINT fk_session_involves_device
         FOREIGN KEY (device_id) REFERENCES identity.device (device_id)
         ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE TABLE oauth.challenge (
     challenge_id uuid NOT NULL
-        DEFAULT uuid_generate_v4(),
+        DEFAULT gen_random_uuid(),
     session_id uuid NOT NULL,
     -- Randomly generated unique challenge to be included in the magic link
     challenge varchar(50) NOT NULL,
@@ -107,14 +107,14 @@ CREATE TABLE oauth.challenge (
         PRIMARY KEY (challenge_id),
     CONSTRAINT uq_challenge_challenge
         UNIQUE (challenge),
-    CONSTRAINT fk_challenge_session_id
+    CONSTRAINT fk_challenge_belongs_to_session
         FOREIGN KEY (session_id) REFERENCES oauth.session (session_id)
         ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE TABLE oauth.otp (
     otp_id uuid NOT NULL
-        DEFAULT uuid_generate_v4(),
+        DEFAULT gen_random_uuid(),
     session_id uuid NOT NULL,
     -- Randomly generated OTP to be sent to a client and exchanged by an AT and RT
     otp varchar(50) NOT NULL,
@@ -128,14 +128,14 @@ CREATE TABLE oauth.otp (
         PRIMARY KEY (otp_id),
     CONSTRAINT uq_otp_otp
         UNIQUE (otp),
-    CONSTRAINT fk_otp_session_id
+    CONSTRAINT fk_otp_belongs_to_session
         FOREIGN KEY (session_id) REFERENCES oauth.session (session_id)
         ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE TABLE oauth.access_token (
     access_token_id uuid NOT NULL
-        DEFAULT uuid_generate_v4(),
+        DEFAULT gen_random_uuid(),
     session_id uuid NOT NULL,
     -- Randomly generated AT to be used at the Resource server to access API
     access_token varchar(50) NOT NULL,
@@ -147,14 +147,14 @@ CREATE TABLE oauth.access_token (
         PRIMARY KEY (access_token_id),
     CONSTRAINT uq_access_token_access_token
         UNIQUE (access_token),
-    CONSTRAINT fk_access_token_session_id
+    CONSTRAINT fk_access_token_belongs_to_session
         FOREIGN KEY (session_id) REFERENCES oauth.session (session_id)
         ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE TABLE oauth.refresh_token (
     refresh_token_id uuid NOT NULL
-        DEFAULT uuid_generate_v4(),
+        DEFAULT gen_random_uuid(),
     session_id uuid NOT NULL,
     -- Randombly generated RT to renew AT on its expiration
     refresh_token varchar(50) NOT NULL,
@@ -166,7 +166,7 @@ CREATE TABLE oauth.refresh_token (
         PRIMARY KEY (refresh_token_id),
     CONSTRAINT uq_refresh_token_refresh_token
         UNIQUE (refresh_token),
-    CONSTRAINT fk_refresh_token_session_id
+    CONSTRAINT fk_refresh_token_belongs_to_session
         FOREIGN KEY (session_id) REFERENCES oauth.session (session_id)
         ON UPDATE CASCADE ON DELETE CASCADE
 );
