@@ -12,17 +12,17 @@ CREATE TABLE identity.user (
     email varchar(50) NOT NULL,
     CONSTRAINT pk_user
         PRIMARY KEY (user_id),
-    CONSTRAINT ch_user_first_name
+    CONSTRAINT ch_user_first_name_is_capitalized_and_non_empty
         CHECK (first_name ~ '^[A-Z][- a-zA-Z]{1,}$'),
-    CONSTRAINT ch_user_last_name
+    CONSTRAINT ch_user_last_name_is_capitalized_and_non_empty
         CHECK (last_name ~ '^[A-Z][- a-zA-Z]{1,}$'),
-    CONSTRAINT ch_user_birth_day
+    CONSTRAINT ch_user_birth_day_is_not_too_old
         CHECK (birth_day > current_timestamp - interval '120 years'),
-    CONSTRAINT ch_user_nationality
+    CONSTRAINT ch_user_nationality_is_capitalized_and_non_empty
         CHECK (nationality ~ '^[A-Z][- a-zA-Z]{3,}$'),
     CONSTRAINT uq_user_email
         UNIQUE (email),
-    CONSTRAINT ch_user_email
+    CONSTRAINT ch_user_email_has_valid_email_format
         CHECK (email ~* '^[-_.a-z]{3,}@[-_.a-z]{3,}$')
 );
 
@@ -43,7 +43,7 @@ CREATE TABLE identity.user_audit (
     CONSTRAINT fk_user_audit_tracks_changes_to_user
         FOREIGN KEY (user_id) REFERENCES identity.user (user_id)
         ON UPDATE RESTRICT ON DELETE RESTRICT,
-    CONSTRAINT ch_user_audit_subject
+    CONSTRAINT ch_user_audit_subject_is_non_empty
         CHECK (length(subject) > 2)
 );
 
