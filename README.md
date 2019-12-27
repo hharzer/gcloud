@@ -5,7 +5,7 @@
 - Itempotent (ON CONFLICT) data model with extended data integrity (ch) and referencial
   (pk/uq, fk) constraints
 - Well defined interface to data access exclusively through database functions (get,
-  put, delete)
+  put, patch, delete)
 - Automatic database entity auditing via database functions
 
 ## REST API
