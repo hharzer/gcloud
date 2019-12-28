@@ -27,22 +27,22 @@ psql -c "${SQL_CREATE_DB}" -v ON_ERROR_STOP=1 -v ECHO=queries
 
 export PGDATABASE=$DB_NAME
 
-# psql -f $DB_DIR/identity_schema.sql -v ON_ERROR_STOP=1 -v ECHO=queries
+psql -f $DB_DIR/identity_schema.sql -v ON_ERROR_STOP=1 -v ECHO=queries
 # psql -f $DB_DIR/oauth_schema.sql -v ON_ERROR_STOP=1 -v ECHO=queries
-psql -f $DB_DIR/pagofx_schema.sql -v ON_ERROR_STOP=1 -v ECHO=queries
+# psql -f $DB_DIR/pagofx_schema.sql -v ON_ERROR_STOP=1 -v ECHO=queries
 
-# # Grant access to database
-# source ./config/api.sh
+# Grant access to database
+source ./config/api.sh
 
-# DB_ROLE=identity_api_role
+DB_ROLE=identity_api_role
 
-# SQL_DROP_ROLE="DROP ROLE IF EXISTS $DB_USER, $DB_ROLE;"
-# SQL_CREATE_ROLE="CREATE ROLE $DB_ROLE;
-# GRANT USAGE ON SCHEMA identity TO $DB_ROLE;
-# GRANT SELECT, INSERT, UPDATE , DELETE
-#    ON TABLE identity.user, identity.user_audit TO $DB_ROLE;
-# CREATE ROLE $DB_USER WITH PASSWORD '$DB_PASSWORD' LOGIN;
-# GRANT $DB_ROLE TO $DB_USER;"
+SQL_DROP_ROLE="DROP ROLE IF EXISTS $DB_USER, $DB_ROLE;"
+SQL_CREATE_ROLE="CREATE ROLE $DB_ROLE;
+GRANT USAGE ON SCHEMA identity TO $DB_ROLE;
+GRANT SELECT, INSERT, UPDATE, DELETE
+   ON TABLE identity.user, identity.user_audit TO $DB_ROLE;
+CREATE ROLE $DB_USER WITH PASSWORD '$DB_PASSWORD' LOGIN;
+GRANT $DB_ROLE TO $DB_USER;"
 
-# psql -c "${SQL_DROP_ROLE}" -v ON_ERROR_STOP=1 -v ECHO=queries
-# psql -c "${SQL_CREATE_ROLE}" -v ON_ERROR_STOP=1 -v ECHO=queries
+psql -c "${SQL_DROP_ROLE}" -v ON_ERROR_STOP=1 -v ECHO=queries
+psql -c "${SQL_CREATE_ROLE}" -v ON_ERROR_STOP=1 -v ECHO=queries

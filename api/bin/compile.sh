@@ -3,7 +3,7 @@
 set -eu
 shopt -s globstar
 
-source ../bin/util.sh
+source ../util/util.sh
 
 export PATH=./node_modules/.bin:$PATH
 export NODE_PATH=.

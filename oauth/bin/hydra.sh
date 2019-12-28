@@ -9,11 +9,11 @@ export DSN='postgres://hydra:Password1!@localhost:5432/hydra?sslmode=disable'
 
 # IdP configuration
 export URLS_SELF_ISSUER=https://localhost:4444/
-export URLS_LOGIN=http://localhost:9090/login
-export URLS_CONSENT=http://localhost:9090/consent
-export URLS_LOGOUT=http://localhost:9090/logout
-export URLS_ERROR=http://localhost:9090/error
-export URLS_POST_LOGOUT_REDIRECT=http://localhost:9090/post_logout_redirect
+export URLS_LOGIN=http://localhost:4000/login
+export URLS_CONSENT=http://localhost:4000/consent
+export URLS_LOGOUT=http://localhost:4000/logout
+export URLS_ERROR=http://localhost:4000/error
+export URLS_POST_LOGOUT_REDIRECT=http://localhost:4000/post_logout_redirect
 
 export TTL_AUTH_CODE=2m
 export TTL_ACCESS_TOKEN=5m

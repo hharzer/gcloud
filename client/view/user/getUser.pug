@@ -1,0 +1,23 @@
+extends ../layout
+
+block content
+    a(href=homePath) Home
+    h1= title
+    table
+        thead
+            tr
+                th User ID
+                th First name
+                th Last name
+                th Birth day
+                th Nationality
+                th Email
+        tbody
+            each user in users
+                tr
+                    td: a(href=`${userPath}/${user.userId}`)= user.userId
+                    td= user.firstName
+                    td= user.lastName
+                    td= user.birthDay
+                    td= user.nationality
+                    td= user.email

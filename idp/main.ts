@@ -1,8 +1,9 @@
 import {createServer, plugins} from "restify";
-import {formatHtml} from "util/formatter";
+import {createHtmlFormatter} from "util/formatter";
 import {closeServer} from "util/middleware";
 // import {addUserRoute} from "route/user/util/routing";
 
+const formatHtml = createHtmlFormatter("view");
 const serverConfg = {formatters: {"text/html": formatHtml}};
 
 const server = createServer(serverConfg);

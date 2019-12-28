@@ -1,9 +1,9 @@
 {
     "client_name": "Client credentials client",
-    "client_uri": "http://localhost:7070/about",
-    "logo_uri": "http://localhost:7070/logo",
-    "policy_uri": "http://localhost:7070/policy",
-    "tos_uri": "http://localhost:7070/tos",
+    "client_uri": "http://localhost:4002/about",
+    "logo_uri": "http://localhost:4002/logo",
+    "policy_uri": "http://localhost:4002/policy",
+    "tos_uri": "http://localhost:4002/tos",
     "client_id": "cc-client",
     "client_secret": "ClientCredentialsSecret",
     "token_endpoint_auth_method": "client_secret_basic",
