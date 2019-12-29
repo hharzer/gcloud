@@ -1,6 +1,6 @@
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=identity
+export PGHOST=localhost
+export PGPORT=5432
+export PGDATABASE=identity
 
-DB_USER=vlad
-DB_PASSWORD=vlad
+export PGUSER=vlad
+export PGPASSWORD=vlad

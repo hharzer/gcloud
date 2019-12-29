@@ -1,15 +1,15 @@
 import {createServer, plugins} from "restify";
-import {createHtmlFormatter} from "util/formatter";
+import {formatHtml} from "util/formatter";
 import {closeServer} from "util/middleware";
 import {addHomeRoute} from "route/home/util/routing";
 import {addUserRoute} from "route/user/util/routing";
-import {getOauth2ClientCredentialsToken, getOauth2AuthorizationCode} from "util/oauth2";
+import {
+    getOauth2ClientCredentialsToken,
+    getOauth2AuthorizationCodeToken,
+} from "util/oauth2";
 
 const getCcToken = async () => {
     const response = await getOauth2ClientCredentialsToken(
-        process.env.OAUTH2_HOST,
-        process.env.OAUTH2_PORT,
-        process.env.OAUTH2_TOKEN_PATH,
         process.env.OAUTH2_CC_CLIENT_ID,
         process.env.OAUTH2_CC_CLIENT_SECRET,
         "custom1 custom2"
@@ -18,10 +18,7 @@ const getCcToken = async () => {
 };
 
 const getAcToken = async () => {
-    const response = await getOauth2AuthorizationCode(
-        process.env.OAUTH2_HOST,
-        process.env.OAUTH2_PORT,
-        process.env.OAUTH2_AUTH_PATH,
+    const response = await getOauth2AuthorizationCodeToken(
         process.env.OAUTH2_AC_CLIENT_ID,
         process.env.OAUTH2_AC_CLIENT_REDIRECT_URI,
         "offline_access openid custom1 custom2"
@@ -53,8 +50,7 @@ const main = async () => {
 
 // main();
 
-const formatHtml = createHtmlFormatter("view");
-const serverConfg = {formatters: {"text/html": formatHtml}};
+const serverConfg = {formatters: {"text/html": formatHtml("view")}};
 
 const server = createServer(serverConfg);
 

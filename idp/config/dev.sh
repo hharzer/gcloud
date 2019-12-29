@@ -1,1 +1,1 @@
-IDP_PORT=9090
+export IDP_PORT=4000

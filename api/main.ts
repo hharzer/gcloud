@@ -1,11 +1,12 @@
 import {createServer, plugins} from "restify";
-import {requestSubject, closeServer} from "util/middleware";
+import {verifyOauth2Token, requestSubject, closeServer} from "util/middleware";
 import {addUserRoute} from "route/user/util/routing";
 
 const server = createServer();
 
 server.use(plugins.queryParser());
 server.use(plugins.bodyParser());
+server.use(verifyOauth2Token("/users"));
 server.use(requestSubject("web"));
 
 addUserRoute(server, "/users");

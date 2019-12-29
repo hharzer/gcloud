@@ -1,8 +1,12 @@
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=identity
+export PGHOST=localhost
+export PGPORT=5432
+export PGDATABASE=identity
 
-DB_USER=identity_api
-DB_PASSWORD='Password1!'
+export PGUSER=identity_api
+export PGPASSWORD='Password1!'
 
-API_PORT=4001
+export OAUTH2_ADMIN_HOST=localhost
+export OAUTH2_ADMIN_PORT=4445
+export OAUTH2_INTROSPECT_PATH=/oauth2/introspect
+
+export API_PORT=4001

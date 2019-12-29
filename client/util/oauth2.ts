@@ -7,13 +7,13 @@ import got from "got";
 //     | jq .
 
 export const getOauth2ClientCredentialsToken = async (
-    oauth2Host,
-    oauth2Port,
-    oauth2TokenPath,
     clientId,
     clientSecret,
     scope
 ) => {
+    const oauth2Host = process.env.OAUTH2_HOST;
+    const oauth2Port = process.env.OAUTH2_PORT;
+    const oauth2TokenPath = process.env.OAUTH2_TOKEN_PATH ?? "UNDEFINED";
     const options: any = {};
     options.prefixUrl = `https://${oauth2Host}:${oauth2Port}`;
     const headers: any = {};
@@ -33,14 +33,10 @@ export const getOauth2ClientCredentialsToken = async (
 // "&scope=offline_access openid custom1 custom2"\
 // "&redirect_uri=http://localhost:7070/callback&state=randomstate"
 
-export const getOauth2AuthorizationCode = async (
-    oauth2Host,
-    oauth2Port,
-    oauth2AuthPath,
-    clientId,
-    redirectUri,
-    scope
-) => {
+export const getOauth2AuthorizationCodeToken = async (clientId, redirectUri, scope) => {
+    const oauth2Host = process.env.OAUTH2_HOST;
+    const oauth2Port = process.env.OAUTH2_PORT;
+    const oauth2AuthPath = process.env.OAUTH2_AUTH_PATH ?? "UNDEFINED";
     const options: any = {};
     options.prefixUrl = `https://${oauth2Host}:${oauth2Port}`;
     const searchParams: any = {};

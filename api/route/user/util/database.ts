@@ -54,7 +54,7 @@ export const getUser = async (user) => {
     SELECT u.user_id "userId",
         u.first_name "firstName",
         u.last_name "lastName",
-        u.birth_day "birthDay",
+        u.birth_day::text "birthDay",
         u.nationality "nationality",
         u.email "email"
     FROM identity.get_user(${parameters.join(", ")}) u;
