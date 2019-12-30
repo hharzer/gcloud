@@ -56,6 +56,12 @@ CREATE TABLE payment.legal_entity (
 
 CREATE SCHEMA customer;
 
+CREATE TYPE customer.customer_type AS
+ENUM ('INDIVIDUAL', 'SOLE_TRATED', 'SME');
+
+CREATE TYPE customer.customer_blocking_status_type AS
+ENUM ('ACTIVE', 'BLOCKED');
+
 CREATE TABLE customer.customer (
     customer_id uuid NOT NULL
         DEFAULT gen_random_uuid(),
@@ -63,9 +69,10 @@ CREATE TABLE customer.customer (
     first_name varchar(50) NOT NULL,
     last_name varchar(50) NOT NULL,
     birth_date date NOT NULL,
-    nationality varchar(2) NOT NULL,
+    nationalities jsonb NOT NULL,
     residence varchar(2) NOT NULL,
-    address jsonb NOT NULL,
+    customer_type customer.customer_type NOT NULL,
+    blocking_status customer.customer_blocking_status_type NOT NULL,
     registration_ts timestamptz NOT NULL
         DEFAULT date_trunc('milliseconds', current_timestamp),
     legal_entity_id uuid NOT NULL,
@@ -73,14 +80,25 @@ CREATE TABLE customer.customer (
         PRIMARY KEY (customer_id),
     CONSTRAINT uq_customer_email
         UNIQUE (email),
-    CONSTRAINT fk_customer_holds_nationality
-        FOREIGN KEY (nationality) REFERENCES reference.country (alpha2_code)
-        ON UPDATE RESTRICT ON DELETE RESTRICT,
     CONSTRAINT fk_customer_lives_in_residence_country
         FOREIGN KEY (residence) REFERENCES reference.country (alpha2_code)
         ON UPDATE RESTRICT ON DELETE RESTRICT,
     CONSTRAINT fk_customer_belongs_to_legal_entity
         FOREIGN KEY (legal_entity_id) REFERENCES payment.legal_entity (legal_entity_id)
+        ON UPDATE RESTRICT ON DELETE RESTRICT
+);
+
+CREATE TABLE customer.customer_address (
+    customer_address_id uuid NOT NULL
+        DEFAULT gen_random_uuid(),
+    address jsonb NOT NULL,
+    registration_ts timestamptz NOT NULL
+        DEFAULT date_trunc('milliseconds', current_timestamp),
+    customer_id uuid NOT NULL,
+    CONSTRAINT fk_customer_address
+        PRIMARY KEY (customer_address_id),
+    CONSTRAINT fk_customer_address_belongs_to_customer
+        FOREIGN KEY (customer_id) REFERENCES customer.customer (customer_id)
         ON UPDATE RESTRICT ON DELETE RESTRICT
 );
 
@@ -139,22 +157,29 @@ CREATE TABLE customer.customer_consent (
     feature_promotion_permission customer.consent_permission_type NOT NULL,
     payment_process_permission customer.consent_permission_type NOT NULL,
     help_to_improve_permission customer.consent_permission_type NOT NULL,
+    update_ts timestamptz NOT NULL
+        DEFAULT date_trunc('milliseconds', current_timestamp),
     customer_id uuid NOT NULL,
     CONSTRAINT pk_customer_consent
         PRIMARY KEY (customer_consent_id),
     CONSTRAINT fk_customer_consent_is_given_by_customer
         FOREIGN KEY (customer_id) REFERENCES customer.customer (customer_id)
-        ON UPDATE RESTRICT ON DELETE RESTRICT
+        ON UPDATE RESTRICT ON DELETE RESTRICT,
+    CONSTRAINT uq_customer_consent_is_unique_for_customer
+        UNIQUE (customer_id)
 );
 
 CREATE TABLE customer.customer_device (
     customer_device_id uuid NOT NULL
         DEFAULT gen_random_uuid(),
+    device_fingerprint varchar(50) NOT NULL,
     device_type varchar(50) NOT NULL,
     registration_token varchar(50) NOT NULL,
     customer_id uuid NOT NULL,
     CONSTRAINT pk_customer_device
         PRIMARY KEY (customer_device_id),
+    CONSTRAINT uq_device_fingerprint
+        UNIQUE (device_fingerprint),
     CONSTRAINT fk_customer_device_belongs_to_customer
         FOREIGN KEY (customer_id) REFERENCES customer.customer (customer_id)
         ON UPDATE RESTRICT ON DELETE RESTRICT
@@ -163,11 +188,14 @@ CREATE TABLE customer.customer_device (
 CREATE TABLE customer.customer_document (
     customer_document_id uuid NOT NULL
         DEFAULT gen_random_uuid(),
+    document_uri varchar(100) NOT NULL,
     document_type varchar(50) NOT NULL,
     document_dek varchar(50) NOT NULL,
     customer_id uuid NOT NULL,
     CONSTRAINT pk_customer_document
         PRIMARY KEY (customer_document_id),
+    CONSTRAINT uq_customer_document_uri
+        UNIQUE (document_uri),
     CONSTRAINT fk_customer_document_uploaded_by_customer
         FOREIGN KEY (customer_id) REFERENCES customer.customer (customer_id)
         ON UPDATE RESTRICT ON DELETE RESTRICT
@@ -190,6 +218,11 @@ CREATE TABLE customer.customer_risk_profile (
     customer_risk_profile_id uuid NOT NULL
         DEFAULT gen_random_uuid(),
     risk_profile_details jsonb NOT NULL,
+    risk_calculator_version varchar(10) NOT NULL,
+    risk_profile_ts timestamptz NOT NULL
+        DEFAULT date_trunc('milliseconds', current_timestamp),
+    risk_profile_override jsonb,
+    risk_profile_override_ts timestamptz,
     customer_id uuid NOT NULL,
     CONSTRAINT pk_customer_risk_profile
         PRIMARY KEY (customer_risk_profile_id),
@@ -210,16 +243,38 @@ CREATE TABLE customer.customer_business_profile (
         ON UPDATE RESTRICT ON DELETE RESTRICT
 );
 
+CREATE TYPE customer.beneficiary_relationship_type AS
+ENUM ('SELF_BENEFICIARY', 'FAMILY', 'FRIEND', 'BUSINESS');
+
 CREATE TABLE customer.beneficiary (
     beneficiary_id uuid NOT NULL
         DEFAULT gen_random_uuid(),
     full_name varchar(50) NOT NULL,
     iban varchar(50) NOT NULL,
+    beneficiary_details jsonb NOT NULL,
+    bank_details jsonb NOT NULL,
+    rlationship_type customer.beneficiary_relationship_type NOT NULL,
     registration_ts timestamptz NOT NULL
         DEFAULT date_trunc('milliseconds', current_timestamp),
     customer_id uuid NOT NULL,
     CONSTRAINT pk_beneficiary
         PRIMARY KEY (beneficiary_id),
+    CONSTRAINT fk_beneficiary_is_registred_by_customer
+        FOREIGN KEY (customer_id) REFERENCES customer.customer (customer_id)
+        ON UPDATE RESTRICT ON DELETE RESTRICT
+);
+
+CREATE TABLE customer.customer_audit (
+    customer_audit_id uuid NOT NULL
+        DEFAULT gen_random_uuid(),
+    subject varchar(50) NOT NULL,
+    old_value jsonb NOT NULL,
+    new_value jsonb NOT NULL,
+    audit_ts timestamptz NOT NULL
+        DEFAULT date_trunc('milliseconds', current_timestamp),
+    customer_id uuid NOT NULL,
+    CONSTRAINT pk_customer_audit
+        PRIMARY KEY (customer_audit_id),
     CONSTRAINT fk_beneficiary_is_registred_by_customer
         FOREIGN KEY (customer_id) REFERENCES customer.customer (customer_id)
         ON UPDATE RESTRICT ON DELETE RESTRICT

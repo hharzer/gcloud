@@ -32,19 +32,19 @@ CREATE INDEX ix_user_last_name ON identity.user (last_name);
 CREATE TABLE identity.user_audit (
     user_audit_id uuid NOT NULL
         DEFAULT gen_random_uuid(),
-    user_id uuid NOT NULL,
     subject varchar(50) NOT NULL,
     old_value jsonb NOT NULL,
     new_value jsonb NOT NULL,
     audit_ts timestamptz NOT NULL
         DEFAULT date_trunc('milliseconds', current_timestamp),
+    user_id uuid NOT NULL,
     CONSTRAINT pk_user_audit
         PRIMARY KEY (user_audit_id),
+    CONSTRAINT ch_user_audit_subject_is_non_empty
+        CHECK (length(subject) > 2),
     CONSTRAINT fk_user_audit_tracks_changes_to_user
         FOREIGN KEY (user_id) REFERENCES identity.user (user_id)
-        ON UPDATE RESTRICT ON DELETE RESTRICT,
-    CONSTRAINT ch_user_audit_subject_is_non_empty
-        CHECK (length(subject) > 2)
+        ON UPDATE RESTRICT ON DELETE RESTRICT
 );
 
 CREATE INDEX ix_user_audit_user_id ON identity.user_audit (user_id);
