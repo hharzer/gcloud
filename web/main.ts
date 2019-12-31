@@ -16,4 +16,4 @@ addUserRoute(server, "/users");
 
 process.on("SIGTERM", closeServer(server));
 
-server.listen(process.env.CLIENT_PORT, () => console.log(`Listening on ${server.url}`));
+server.listen(process.env.WEB_PORT, () => console.log(`Listening on ${server.url}`));
