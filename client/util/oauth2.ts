@@ -1,4 +1,22 @@
+import * as moment from "moment";
 import got from "got";
+import {
+    BadRequestError,
+    UnauthorizedError,
+    ForbiddenError,
+    InternalServerError,
+} from "restify-errors";
+
+const MAX_RETRY = 2;
+
+const auth = (() => {
+    const oauth2Host = process.env.OAUTH2_HOST;
+    const oauth2Port = process.env.OAUTH2_PORT;
+    const prefixUrl = `https://${oauth2Host}:${oauth2Port}`;
+    const options = {prefixUrl};
+    const authClient = got.extend(options);
+    return authClient;
+})();
 
 // curl -s -k -X POST "https://localhost:4444/oauth2/token" \
 //     -u 'cc-client':'ClientCredentialsSecret' \
@@ -11,41 +29,80 @@ export const getOauth2ClientCredentialsToken = async (
     clientSecret,
     scope
 ) => {
-    const oauth2Host = process.env.OAUTH2_HOST;
-    const oauth2Port = process.env.OAUTH2_PORT;
     const oauth2TokenPath = process.env.OAUTH2_TOKEN_PATH ?? "UNDEFINED";
-    const options: any = {};
-    options.prefixUrl = `https://${oauth2Host}:${oauth2Port}`;
-    const headers: any = {};
-    headers["Content-Type"] = "application/x-www-form-urlencoded";
+    const contentType = "application/x-www-form-urlencoded";
     const clientCredentials = Buffer.from(`${clientId}:${clientSecret}`).toString(
         "base64"
     );
-    headers["Authorization"] = `Basic ${clientCredentials}`;
-    options.headers = headers;
-    options.body = `grant_type=client_credentials&scope=${scope}`;
-    const response = await got.post(oauth2TokenPath, options).json();
+    const authorization = `Basic ${clientCredentials}`;
+    const body = `grant_type=client_credentials&scope=${scope}`;
+    // prettier-ignore
+    const headers = {"Content-Type": contentType, "Authorization": authorization};
+    const options = {headers, body};
+    const response = await auth.post(oauth2TokenPath, options).json();
     return response;
+};
+
+const parseHttpError = (error) => {
+    const statusCode = error?.response?.statusCode ?? 500;
+    const errorBody = JSON.parse(error?.response?.body ?? {message: error.message});
+    const message = [
+        errorBody?.error,
+        errorBody?.error_description,
+        errorBody?.error_hint,
+        errorBody?.message,
+    ]
+        .filter(Boolean)
+        .join(". ");
+    return {statusCode, message};
+};
+
+const createRestifyError = (httpError) => {
+    switch (httpError.statusCode) {
+        case 400:
+            return new BadRequestError(httpError.message);
+        case 401:
+            return new UnauthorizedError(httpError.message);
+        case 403:
+            return new ForbiddenError(httpError.message);
+        default:
+            return new InternalServerError(httpError.message);
+    }
+};
+
+export const withOauth2Token = (clientId, clientSecret, scope, callApi) => {
+    let token: any = null;
+    return async (...args) => {
+        let retryCount = 0;
+        while (retryCount <= MAX_RETRY) {
+            try {
+                if (!token || retryCount > 0 || moment().isAfter(token.expires_at)) {
+                    token = await getOauth2ClientCredentialsToken(
+                        clientId,
+                        clientSecret,
+                        scope
+                    );
+                    token.expires_at = moment()
+                        .add(token.expires_in, "seconds")
+                        .subtract(5, "seconds");
+                }
+                const response = await callApi(token.access_token, ...args);
+                return response;
+            } catch (error) {
+                const httpError = parseHttpError(error);
+                if (![400, 401, 403].includes(httpError.statusCode)) {
+                    throw error;
+                }
+                if (retryCount === MAX_RETRY) {
+                    throw createRestifyError(httpError);
+                }
+            }
+            ++retryCount;
+        }
+    };
 };
 
 // curl -s -k -X GET "https://localhost:4444/oauth2/auth"\
 // "?response_type=code&client_id=ac-client"\
 // "&scope=offline_access openid custom1 custom2"\
 // "&redirect_uri=http://localhost:7070/callback&state=randomstate"
-
-export const getOauth2AuthorizationCodeToken = async (clientId, redirectUri, scope) => {
-    const oauth2Host = process.env.OAUTH2_HOST;
-    const oauth2Port = process.env.OAUTH2_PORT;
-    const oauth2AuthPath = process.env.OAUTH2_AUTH_PATH ?? "UNDEFINED";
-    const options: any = {};
-    options.prefixUrl = `https://${oauth2Host}:${oauth2Port}`;
-    const searchParams: any = {};
-    searchParams["response_type"] = "code";
-    searchParams["client_id"] = clientId;
-    searchParams["scope"] = scope;
-    searchParams["redirect_uri"] = redirectUri;
-    searchParams["state"] = "randomstate";
-    options.searchParams = searchParams;
-    const response = got.get(oauth2AuthPath, options);
-    return response;
-};

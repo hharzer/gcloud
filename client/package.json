@@ -15,6 +15,7 @@
         "@types/got": "9.6.9"
     },
     "dependencies": {
+        "moment": "2.24.0",
         "restify": "8.5.0",
         "restify-errors": "8.0.1",
         "pug": "2.0.4",
