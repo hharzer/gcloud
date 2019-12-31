@@ -35,9 +35,9 @@ export const getOauth2ClientCredentialsToken = async (
         "base64"
     );
     const authorization = `Basic ${clientCredentials}`;
-    const body = `grant_type=client_credentials&scope=${scope}`;
     // prettier-ignore
     const headers = {"Content-Type": contentType, "Authorization": authorization};
+    const body = `grant_type=client_credentials&scope=${scope}`;
     const options = {headers, body};
     const response = await auth.post(oauth2TokenPath, options).json();
     return response;

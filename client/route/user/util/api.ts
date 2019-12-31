@@ -1,15 +1,20 @@
 import got from "got";
 
-export const getUser = async (accessToken) => {
+const api = (() => {
     const apiHost = process.env.API_HOST;
     const apiPort = process.env.API_PORT;
+    const prefixUrl = `http://${apiHost}:${apiPort}`;
+    const options = {prefixUrl};
+    const apiClient = got.extend(options);
+    return apiClient;
+})();
+
+export const getUser = async (accessToken) => {
     const userPath = "users";
-    const options: any = {};
-    options.prefixUrl = `http://${apiHost}:${apiPort}`;
-    const headers: any = {};
-    headers["Authorization"] = `Bearer ${accessToken}`;
-    options.headers = headers;
-    const response: any = await got.get(userPath, options).json();
+    const authorization = `Bearer ${accessToken}`;
+    const headers = {Authorization: authorization};
+    const options = {headers};
+    const response: any = await api.get(userPath, options).json();
     const users = response.data;
     return users;
 };

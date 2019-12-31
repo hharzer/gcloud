@@ -1,5 +1,14 @@
 import got from "got";
 
+const authAdmin = (() => {
+    const oauth2AdminHost = process.env.OAUTH2_ADMIN_HOST;
+    const oauth2AdminPort = process.env.OAUTH2_ADMIN_PORT;
+    const prefixUrl = `https://${oauth2AdminHost}:${oauth2AdminPort}`;
+    const options = {prefixUrl};
+    const authAdminClient = got.extend(options);
+    return authAdminClient;
+})();
+
 // TOKEN=$(curl -s -k -X POST "https://localhost:4444/oauth2/token" \
 //     -u 'cc-client':'ClientCredentialsSecret' \
 //     -H 'Content-Type: application/x-www-form-urlencoded' \
@@ -12,15 +21,11 @@ import got from "got";
 //     | jq .
 
 export const introspectOAuth2Token = async (oauth2Token, scope) => {
-    const oauth2Host = process.env.OAUTH2_ADMIN_HOST;
-    const oauth2Port = process.env.OAUTH2_ADMIN_PORT;
     const oauth2IntrospectPath = process.env.OAUTH2_INTROSPECT_PATH ?? "UNDEFINED";
-    const options: any = {};
-    options.prefixUrl = `https://${oauth2Host}:${oauth2Port}`;
-    const headers: any = {};
-    headers["Content-Type"] = "application/x-www-form-urlencoded";
-    options.headers = headers;
-    options.body = `token=${oauth2Token}&scope=${scope}`;
-    const response = await got.post(oauth2IntrospectPath, options).json();
+    const contentType = "application/x-www-form-urlencoded";
+    const headers = {"Content-Type": contentType};
+    const body = `token=${oauth2Token}&scope=${scope}`;
+    const options = {headers, body};
+    const response = await authAdmin.post(oauth2IntrospectPath, options).json();
     return response;
 };

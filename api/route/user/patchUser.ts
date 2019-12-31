@@ -50,8 +50,7 @@ const executeRequest = async (req, res, next) => {
         if (userId === null) {
             throw new BadRequestError(`Non-existing userId ${user.userId}`);
         }
-        const response: any = {};
-        response.userId = userId;
+        const response = {userId};
         res.response = response;
         next();
     } catch (error) {

@@ -11,11 +11,10 @@ const getUserWithOauth2Token = withOauth2Token(
 const executeRequest = async (req, res, next) => {
     try {
         const users = await getUserWithOauth2Token();
-        const response: any = {};
-        response.title = "Users";
-        response.homePath = "/";
-        response.userPath = "/users";
-        response.users = users;
+        const title = "Users";
+        const homePath = "/";
+        const userPath = "/users";
+        const response = {title, homePath, userPath, users};
         res.response = response;
         next();
     } catch (error) {

@@ -72,8 +72,7 @@ const executeRequest = async (req, res, next) => {
     try {
         const user = req.request;
         const users = await getUser(user);
-        const response: any = {};
-        response.data = users;
+        const response = {data: users};
         res.response = response;
         next();
     } catch (error) {

@@ -1,7 +1,7 @@
 const executeRequest = async (req, res, next) => {
-    const response: any = {};
-    response.title = "Welcome home";
-    response.userPath = "/users";
+    const title = "Welcome home";
+    const userPath = "/users";
+    const response = {title, userPath};
     res.response = response;
     next();
 };

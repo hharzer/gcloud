@@ -4,9 +4,9 @@ import {validateUserId} from "route/user/util/validation";
 import {getUser} from "route/user/util/database";
 
 const parseRequest = (req, res, next) => {
-    const request: any = {};
-    request.subject = req.subject;
-    request.userId = req.params.userId;
+    const subject = req.subject;
+    const userId = req.params.userId;
+    const request = {subject, userId};
     req.request = request;
     next();
 };
@@ -28,8 +28,7 @@ const executeRequest = async (req, res, next) => {
         if (users.length !== 1) {
             throw new BadRequestError(`Non-existing userId ${user.userId}`);
         }
-        const response: any = {};
-        response.data = users[0];
+        const response = {data: users[0]};
         res.response = response;
         next();
     } catch (error) {

@@ -36,8 +36,7 @@ const executeRequest = async (req, res, next) => {
     try {
         const user = req.request;
         const userId = await putUser(user);
-        const response: any = {};
-        response.userId = userId;
+        const response = {userId};
         res.response = response;
         next();
     } catch (error) {
