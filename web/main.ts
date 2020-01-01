@@ -11,7 +11,7 @@ const server = createServer(serverConfg);
 server.use(plugins.queryParser());
 server.use(plugins.bodyParser());
 
-addHomeRoute(server, "/");
+addHomeRoute(server, "");
 addUserRoute(server, "/users");
 
 process.on("SIGTERM", closeServer(server));

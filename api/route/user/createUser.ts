@@ -9,7 +9,7 @@ import {
 import {putUser} from "route/user/util/database";
 
 const parseRequest = (req, res, next) => {
-    const request = req.body;
+    const request = req.body ?? {};
     request.subject = req.subject;
     req.request = request;
     next();

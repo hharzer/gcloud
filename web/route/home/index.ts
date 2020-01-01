@@ -1,7 +1,8 @@
 const executeRequest = async (req, res, next) => {
     const title = "Welcome home";
     const userPath = "/users";
-    const response = {title, userPath};
+    const loginPath = "/login";
+    const response = {title, userPath, loginPath};
     res.response = response;
     next();
 };
@@ -9,10 +10,10 @@ const executeRequest = async (req, res, next) => {
 const formatResponse = (req, res, next) => {
     const response = res.response;
     res.setHeader("Content-Type", "text/html");
-    res.send({template: "home/home", locals: response});
+    res.send({template: "home/index", locals: response});
     next();
 };
 
 export const addRoute = (server, route) => {
-    server.get(route, executeRequest, formatResponse);
+    server.get(`${route}/`, executeRequest, formatResponse);
 };

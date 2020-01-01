@@ -11,5 +11,5 @@
     "grant_types": ["authorization_code", "refresh_token"],
     "response_types": ["code", "token", "id_token"],
     "redirect_uris": ["http://localhost:4002/callback"],
-    "post_logout_redirect_uris": ["http://localhost:4002/post-logout-callback"]
+    "post_logout_redirect_uris": ["http://localhost:4002/post-logout"]
 }

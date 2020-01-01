@@ -18,7 +18,7 @@ const auth = (() => {
     return authClient;
 })();
 
-// curl -s -k -X POST "https://localhost:4444/oauth2/token" \
+// curl -sSLk -X POST "https://localhost:4444/oauth2/token" \
 //     -u 'cc-client':'ClientCredentialsSecret' \
 //     -H 'Content-Type: application/x-www-form-urlencoded' \
 //     -d 'grant_type=client_credentials&scope=custom1 custom2' \
@@ -101,8 +101,3 @@ export const withOauth2Token = (clientId, clientSecret, scope, callApi) => {
         }
     };
 };
-
-// curl -s -k -X GET "https://localhost:4444/oauth2/auth"\
-// "?response_type=code&client_id=ac-client"\
-// "&scope=offline_access openid custom1 custom2"\
-// "&redirect_uri=http://localhost:7070/callback&state=randomstate"

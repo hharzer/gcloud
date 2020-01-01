@@ -10,7 +10,7 @@ import {
 import {putUser} from "route/user/util/database";
 
 const parseRequest = (req, res, next) => {
-    const request = req.body;
+    const request = req.body ?? {};
     request.subject = req.subject;
     request.userId = req.params.userId;
     req.request = request;
