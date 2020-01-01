@@ -1,26 +1,16 @@
 import {createServer, plugins} from "restify";
-import {createHtmlFormatter} from "util/formatter";
+import {formatHtml} from "util/formatter";
 import {closeServer} from "util/middleware";
-// import {addUserRoute} from "route/user/util/routing";
+import {addHomeRoute} from "route/home/util/routing";
 
-const formatHtml = createHtmlFormatter("view");
-const serverConfg = {formatters: {"text/html": formatHtml}};
+const serverConfg = {formatters: {"text/html": formatHtml("view")}};
 
 const server = createServer(serverConfg);
 
 server.use(plugins.queryParser());
 server.use(plugins.bodyParser());
 
-const ok = (req, res, next) => {
-    const response = {title: "Default title", name: "Vlad"};
-    res.setHeader("Content-Type", "text/html");
-    res.send({template: "index", locals: response});
-    next();
-};
-
-server.get("/ok", ok);
-
-// addUserRoute(server, "/users");
+addHomeRoute(server, "");
 
 process.on("SIGTERM", closeServer(server));
 

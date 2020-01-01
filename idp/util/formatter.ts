@@ -1,6 +1,6 @@
 import {renderFile} from "pug";
 
-export const createHtmlFormatter = (view) => {
+export const formatHtml = (view) => {
     return (req, res, {template, locals}) => {
         try {
             const options = {cache: false, compileDebug: false};
