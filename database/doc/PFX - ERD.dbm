@@ -3,7 +3,7 @@
 CAUTION: Do not modify this file unless you know what you are doing.
          Unexpected results may occur if the code is changed deliberately.
 -->
-<dbmodel pgmodeler-ver="0.9.2-beta2" last-position="0,725" last-zoom="0.4" max-obj-count="61"
+<dbmodel pgmodeler-ver="0.9.2-beta2" last-position="0,0" last-zoom="0.25" max-obj-count="66"
 	 default-schema="public" default-owner="postgres">
 <role name="vlad"
       superuser="true"
@@ -14,13 +14,6 @@ CAUTION: Do not modify this file unless you know what you are doing.
 </role>
 
 <role name="hydra"
-      inherit="true"
-      login="true"
-      encrypted="true"
-      password="********">
-</role>
-
-<role name="identity_api"
       inherit="true"
       login="true"
       encrypted="true"
@@ -76,11 +69,11 @@ CAUTION: Do not modify this file unless you know what you are doing.
       password="********">
 </role>
 
-<role name="identity_api_role"
+<role name="identity_api"
       inherit="true"
+      login="true"
       encrypted="true"
       password="********">
-	<roles names="identity_api" role-type="member" />
 </role>
 
 <role name="api_role"
@@ -132,6 +125,13 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	<roles names="accounting_reconciliation_user" role-type="member" />
 </role>
 
+<role name="identity_api_role"
+      inherit="true"
+      encrypted="true"
+      password="********">
+	<roles names="identity_api" role-type="member" />
+</role>
+
 <database name="identity" encoding="UTF8" lc-collate="en_US.UTF-8" lc-ctype="en_US.UTF-8" is-template="false" allow-conns="true">
 	<role name="vlad"/>
 	<tablespace name="pg_default"/>
@@ -145,14 +145,14 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	<comment><![CDATA[cryptographic functions]]></comment>
 </extension>
 
-<schema name="reference" layer="0" rect-visible="true" fill-color="#29faf3">
+<schema name="reference" layer="0" rect-visible="true" fill-color="#bde8f2">
 	<role name="vlad"/>
 </schema>
 
 <table name="country" layer="0" collapse-mode="2" max-obj-count="4">
 	<schema name="reference"/>
 	<role name="vlad"/>
-	<position x="1380" y="1820"/>
+	<position x="2020" y="2000"/>
 	<column name="country_id" not-null="true" default-value="gen_random_uuid()">
 		<type name="uuid" length="0"/>
 	</column>
@@ -176,25 +176,37 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	</constraint>
 </table>
 
-<table name="currency" layer="0" collapse-mode="2" max-obj-count="6">
+<table name="currency" layer="0" collapse-mode="2" max-obj-count="9">
 	<schema name="reference"/>
 	<role name="vlad"/>
-	<position x="1720" y="1820"/>
+	<position x="2360" y="2000"/>
 	<column name="currency_id" not-null="true" default-value="gen_random_uuid()">
 		<type name="uuid" length="0"/>
 	</column>
 	<column name="iso_code" not-null="true">
 		<type name="character varying" length="3"/>
 	</column>
-	<column name="full_name" not-null="true">
+	<column name="unit_name" not-null="true">
+		<type name="character varying" length="50"/>
+	</column>
+	<column name="fractional_unit_name" not-null="true">
 		<type name="character varying" length="50"/>
 	</column>
 	<column name="currency_symbol" not-null="true">
 		<type name="character varying" length="5"/>
 	</column>
 	<column name="fractional_unit" not-null="true">
-		<type name="character varying" length="10"/>
+		<type name="integer" length="0"/>
 	</column>
+	<column name="currency_timezone" not-null="true">
+		<type name="character varying" length="50"/>
+	</column>
+	<column name="currency_utc_offset" not-null="true">
+		<type name="interval" length="0"/>
+	</column>
+	<constraint name="ch_fractional_unit_has_fixed_limit" type="ck-constr" table="reference.currency">
+			<expression><![CDATA[(fractional_unit = ANY ('{0,-1,-2,-3}'::integer[]))]]></expression>
+	</constraint>
 	<constraint name="pk_currency" type="pk-constr" table="reference.currency">
 		<columns names="currency_id" ref-type="src-columns"/>
 	</constraint>
@@ -203,14 +215,14 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	</constraint>
 </table>
 
-<schema name="payment" layer="0" rect-visible="true" fill-color="#cedf8d">
+<schema name="payment" layer="0" rect-visible="true" fill-color="#52df33">
 	<role name="vlad"/>
 </schema>
 
 <table name="legal_entity" layer="0" collapse-mode="2" max-obj-count="10">
 	<schema name="payment"/>
 	<role name="vlad"/>
-	<position x="4040" y="1740"/>
+	<position x="4060" y="1520"/>
 	<column name="legal_entity_id" not-null="true" default-value="gen_random_uuid()">
 		<type name="uuid" length="0"/>
 	</column>
@@ -243,14 +255,26 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	</constraint>
 </table>
 
-<schema name="customer" layer="0" rect-visible="true" fill-color="#ef6f7b">
+<schema name="customer" layer="0" rect-visible="true" fill-color="#db5b5b">
 	<role name="vlad"/>
 </schema>
 
-<table name="customer" layer="0" collapse-mode="2" max-obj-count="13">
+<usertype name="customer_type" configuration="enumeration">
 	<schema name="customer"/>
 	<role name="vlad"/>
-	<position x="1100" y="480"/>
+	<enumeration values="INDIVIDUAL,SOLE_TRATED,SME"/>
+</usertype>
+
+<usertype name="customer_blocking_status_type" configuration="enumeration">
+	<schema name="customer"/>
+	<role name="vlad"/>
+	<enumeration values="ACTIVE,BLOCKED"/>
+</usertype>
+
+<table name="customer" layer="0" collapse-mode="2" max-obj-count="14">
+	<schema name="customer"/>
+	<role name="vlad"/>
+	<position x="1440" y="960"/>
 	<column name="customer_id" not-null="true" default-value="gen_random_uuid()">
 		<type name="uuid" length="0"/>
 	</column>
@@ -266,14 +290,17 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	<column name="birth_date" not-null="true">
 		<type name="date" length="0"/>
 	</column>
-	<column name="nationality" not-null="true">
-		<type name="character varying" length="2"/>
+	<column name="nationalities" not-null="true">
+		<type name="jsonb" length="0"/>
 	</column>
 	<column name="residence" not-null="true">
 		<type name="character varying" length="2"/>
 	</column>
-	<column name="address" not-null="true">
-		<type name="jsonb" length="0"/>
+	<column name="customer_type" not-null="true">
+		<type name="customer.customer_type" length="0"/>
+	</column>
+	<column name="blocking_status" not-null="true">
+		<type name="customer.customer_blocking_status_type" length="0"/>
 	</column>
 	<column name="registration_ts" not-null="true" default-value="date_trunc('milliseconds'::text, CURRENT_TIMESTAMP)">
 		<type name="timestamp with time zone" length="0" with-timezone="true"/>
@@ -292,6 +319,27 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	</constraint>
 </table>
 
+<table name="customer_address" layer="0" collapse-mode="2" max-obj-count="4">
+	<schema name="customer"/>
+	<role name="vlad"/>
+	<position x="560" y="80"/>
+	<column name="customer_address_id" not-null="true" default-value="gen_random_uuid()">
+		<type name="uuid" length="0"/>
+	</column>
+	<column name="address" not-null="true">
+		<type name="jsonb" length="0"/>
+	</column>
+	<column name="registration_ts" not-null="true" default-value="date_trunc('milliseconds'::text, CURRENT_TIMESTAMP)">
+		<type name="timestamp with time zone" length="0" with-timezone="true"/>
+	</column>
+	<column name="customer_id" not-null="true">
+		<type name="uuid" length="0"/>
+	</column>
+	<constraint name="fk_customer_address" type="pk-constr" table="customer.customer_address">
+		<columns names="customer_address_id" ref-type="src-columns"/>
+	</constraint>
+</table>
+
 <usertype name="onboarding_stage_type" configuration="enumeration">
 	<schema name="customer"/>
 	<role name="vlad"/>
@@ -301,7 +349,7 @@ CAUTION: Do not modify this file unless you know what you are doing.
 <table name="customer_onboarding" layer="0" collapse-mode="2" max-obj-count="6">
 	<schema name="customer"/>
 	<role name="vlad"/>
-	<position x="120" y="80"/>
+	<position x="40" y="80"/>
 	<column name="customer_onboarding_id" not-null="true" default-value="gen_random_uuid()">
 		<type name="uuid" length="0"/>
 	</column>
@@ -328,10 +376,10 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	<enumeration values="PERMITTED,NOT_PERMITTED,BLOCKED"/>
 </usertype>
 
-<table name="customer_consent" layer="0" collapse-mode="2" max-obj-count="6">
+<table name="customer_consent" layer="0" collapse-mode="2" max-obj-count="7">
 	<schema name="customer"/>
 	<role name="vlad"/>
-	<position x="120" y="380"/>
+	<position x="980" y="80"/>
 	<column name="customer_consent_id" not-null="true" default-value="gen_random_uuid()">
 		<type name="uuid" length="0"/>
 	</column>
@@ -344,20 +392,29 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	<column name="help_to_improve_permission" not-null="true">
 		<type name="customer.consent_permission_type" length="0"/>
 	</column>
+	<column name="update_ts" not-null="true" default-value="date_trunc('milliseconds'::text, CURRENT_TIMESTAMP)">
+		<type name="timestamp with time zone" length="0" with-timezone="true"/>
+	</column>
 	<column name="customer_id" not-null="true">
 		<type name="uuid" length="0"/>
 	</column>
 	<constraint name="pk_customer_consent" type="pk-constr" table="customer.customer_consent">
 		<columns names="customer_consent_id" ref-type="src-columns"/>
 	</constraint>
+	<constraint name="uq_customer_consent_is_unique_for_customer" type="uq-constr" table="customer.customer_consent">
+		<columns names="customer_id" ref-type="src-columns"/>
+	</constraint>
 </table>
 
-<table name="customer_device" layer="0" collapse-mode="2" max-obj-count="4">
+<table name="customer_device" layer="0" collapse-mode="2" max-obj-count="6">
 	<schema name="customer"/>
 	<role name="vlad"/>
-	<position x="120" y="680"/>
+	<position x="1480" y="80"/>
 	<column name="customer_device_id" not-null="true" default-value="gen_random_uuid()">
 		<type name="uuid" length="0"/>
+	</column>
+	<column name="device_fingerprint" not-null="true">
+		<type name="character varying" length="50"/>
 	</column>
 	<column name="device_type" not-null="true">
 		<type name="character varying" length="50"/>
@@ -371,14 +428,20 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	<constraint name="pk_customer_device" type="pk-constr" table="customer.customer_device">
 		<columns names="customer_device_id" ref-type="src-columns"/>
 	</constraint>
+	<constraint name="uq_device_fingerprint" type="uq-constr" table="customer.customer_device">
+		<columns names="device_fingerprint" ref-type="src-columns"/>
+	</constraint>
 </table>
 
-<table name="customer_document" layer="0" collapse-mode="2" max-obj-count="4">
+<table name="customer_document" layer="0" collapse-mode="2" max-obj-count="6">
 	<schema name="customer"/>
 	<role name="vlad"/>
-	<position x="120" y="960"/>
+	<position x="1900" y="80"/>
 	<column name="customer_document_id" not-null="true" default-value="gen_random_uuid()">
 		<type name="uuid" length="0"/>
+	</column>
+	<column name="document_uri" not-null="true">
+		<type name="character varying" length="100"/>
 	</column>
 	<column name="document_type" not-null="true">
 		<type name="character varying" length="50"/>
@@ -392,12 +455,15 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	<constraint name="pk_customer_document" type="pk-constr" table="customer.customer_document">
 		<columns names="customer_document_id" ref-type="src-columns"/>
 	</constraint>
+	<constraint name="uq_customer_document_uri" type="uq-constr" table="customer.customer_document">
+		<columns names="document_uri" ref-type="src-columns"/>
+	</constraint>
 </table>
 
 <table name="customer_review" layer="0" collapse-mode="2" max-obj-count="4">
 	<schema name="customer"/>
 	<role name="vlad"/>
-	<position x="120" y="1240"/>
+	<position x="2340" y="80"/>
 	<column name="customer_review_id" not-null="true" default-value="gen_random_uuid()">
 		<type name="uuid" length="0"/>
 	</column>
@@ -415,15 +481,27 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	</constraint>
 </table>
 
-<table name="customer_risk_profile" layer="0" collapse-mode="2" max-obj-count="3">
+<table name="customer_risk_profile" layer="0" collapse-mode="2" max-obj-count="8">
 	<schema name="customer"/>
 	<role name="vlad"/>
-	<position x="600" y="1260"/>
+	<position x="40" y="460"/>
 	<column name="customer_risk_profile_id" not-null="true" default-value="gen_random_uuid()">
 		<type name="uuid" length="0"/>
 	</column>
 	<column name="risk_profile_details" not-null="true">
 		<type name="jsonb" length="0"/>
+	</column>
+	<column name="risk_calculator_version" not-null="true">
+		<type name="character varying" length="10"/>
+	</column>
+	<column name="risk_profile_ts" not-null="true" default-value="date_trunc('milliseconds'::text, CURRENT_TIMESTAMP)">
+		<type name="timestamp with time zone" length="0" with-timezone="true"/>
+	</column>
+	<column name="risk_profile_override">
+		<type name="jsonb" length="0"/>
+	</column>
+	<column name="risk_profile_override_ts">
+		<type name="timestamp with time zone" length="0" with-timezone="true"/>
 	</column>
 	<column name="customer_id" not-null="true">
 		<type name="uuid" length="0"/>
@@ -436,7 +514,7 @@ CAUTION: Do not modify this file unless you know what you are doing.
 <table name="customer_business_profile" layer="0" collapse-mode="2" max-obj-count="3">
 	<schema name="customer"/>
 	<role name="vlad"/>
-	<position x="1080" y="1260"/>
+	<position x="40" y="820"/>
 	<column name="customer_business_profile_id" not-null="true" default-value="gen_random_uuid()">
 		<type name="uuid" length="0"/>
 	</column>
@@ -451,10 +529,16 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	</constraint>
 </table>
 
-<table name="beneficiary" layer="0" collapse-mode="2" max-obj-count="6">
+<usertype name="beneficiary_relationship_type" configuration="enumeration">
 	<schema name="customer"/>
 	<role name="vlad"/>
-	<position x="1120" y="80"/>
+	<enumeration values="SELF_BENEFICIARY,FAMILY,FRIEND,BUSINESS"/>
+</usertype>
+
+<table name="beneficiary" layer="0" collapse-mode="2" max-obj-count="9">
+	<schema name="customer"/>
+	<role name="vlad"/>
+	<position x="2300" y="460"/>
 	<column name="beneficiary_id" not-null="true" default-value="gen_random_uuid()">
 		<type name="uuid" length="0"/>
 	</column>
@@ -463,6 +547,15 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	</column>
 	<column name="iban" not-null="true">
 		<type name="character varying" length="50"/>
+	</column>
+	<column name="beneficiary_details" not-null="true">
+		<type name="jsonb" length="0"/>
+	</column>
+	<column name="bank_details" not-null="true">
+		<type name="jsonb" length="0"/>
+	</column>
+	<column name="rlationship_type" not-null="true">
+		<type name="customer.beneficiary_relationship_type" length="0"/>
 	</column>
 	<column name="registration_ts" not-null="true" default-value="date_trunc('milliseconds'::text, CURRENT_TIMESTAMP)">
 		<type name="timestamp with time zone" length="0" with-timezone="true"/>
@@ -475,16 +568,43 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	</constraint>
 </table>
 
+<table name="customer_audit" layer="0" collapse-mode="2" max-obj-count="7">
+	<schema name="customer"/>
+	<role name="vlad"/>
+	<position x="40" y="1120"/>
+	<column name="customer_audit_id" not-null="true" default-value="gen_random_uuid()">
+		<type name="uuid" length="0"/>
+	</column>
+	<column name="subject" not-null="true">
+		<type name="character varying" length="50"/>
+	</column>
+	<column name="old_value" not-null="true">
+		<type name="jsonb" length="0"/>
+	</column>
+	<column name="new_value" not-null="true">
+		<type name="jsonb" length="0"/>
+	</column>
+	<column name="audit_ts" not-null="true" default-value="date_trunc('milliseconds'::text, CURRENT_TIMESTAMP)">
+		<type name="timestamp with time zone" length="0" with-timezone="true"/>
+	</column>
+	<column name="customer_id" not-null="true">
+		<type name="uuid" length="0"/>
+	</column>
+	<constraint name="pk_customer_audit" type="pk-constr" table="customer.customer_audit">
+		<columns names="customer_audit_id" ref-type="src-columns"/>
+	</constraint>
+</table>
+
 <usertype name="funding_method_type" configuration="enumeration">
 	<schema name="payment"/>
 	<role name="vlad"/>
 	<enumeration values="FUNDING_METHOD_1,FUNDING_METHOD_2"/>
 </usertype>
 
-<table name="base_currency" layer="0" collapse-mode="2" max-obj-count="7">
+<table name="base_currency" layer="0" collapse-mode="2" max-obj-count="8">
 	<schema name="payment"/>
 	<role name="vlad"/>
-	<position x="3800" y="1320"/>
+	<position x="4800" y="1020"/>
 	<column name="base_currency_id" not-null="true" default-value="gen_random_uuid()">
 		<type name="uuid" length="0"/>
 	</column>
@@ -495,12 +615,15 @@ CAUTION: Do not modify this file unless you know what you are doing.
 		<type name="payment.funding_method_type" length="0"/>
 	</column>
 	<column name="lower_bound" not-null="true">
-		<type name="numeric" length="10" precision="2"/>
+		<type name="numeric" length="14" precision="3"/>
 	</column>
 	<column name="upper_bound" not-null="true">
-		<type name="numeric" length="10" precision="2"/>
+		<type name="numeric" length="14" precision="3"/>
 	</column>
 	<column name="legal_entity_id" not-null="true">
+		<type name="uuid" length="0"/>
+	</column>
+	<column name="correspondent_id" not-null="true">
 		<type name="uuid" length="0"/>
 	</column>
 	<constraint name="pk_base_currency" type="pk-constr" table="payment.base_currency">
@@ -517,7 +640,7 @@ CAUTION: Do not modify this file unless you know what you are doing.
 <table name="term_currency" layer="0" collapse-mode="2" max-obj-count="8">
 	<schema name="payment"/>
 	<role name="vlad"/>
-	<position x="4280" y="1320"/>
+	<position x="4820" y="1980"/>
 	<column name="term_currency_id" not-null="true" default-value="gen_random_uuid()">
 		<type name="uuid" length="0"/>
 	</column>
@@ -528,15 +651,15 @@ CAUTION: Do not modify this file unless you know what you are doing.
 		<type name="payment.payment_method_type" length="0"/>
 	</column>
 	<column name="lower_bound" not-null="true">
-		<type name="numeric" length="10" precision="2"/>
+		<type name="numeric" length="14" precision="3"/>
 	</column>
 	<column name="upper_bound" not-null="true">
-		<type name="numeric" length="10" precision="2"/>
+		<type name="numeric" length="14" precision="3"/>
 	</column>
 	<column name="legal_entity_id" not-null="true">
 		<type name="uuid" length="0"/>
 	</column>
-	<column name="correspondent_legal_entity_id" not-null="true">
+	<column name="correspondent_id" not-null="true">
 		<type name="uuid" length="0"/>
 	</column>
 	<constraint name="pk_term_currency" type="pk-constr" table="payment.term_currency">
@@ -544,10 +667,10 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	</constraint>
 </table>
 
-<table name="rate" layer="0" collapse-mode="2" max-obj-count="7">
+<table name="rate" layer="0" collapse-mode="2" max-obj-count="10">
 	<schema name="payment"/>
 	<role name="vlad"/>
-	<position x="4040" y="800"/>
+	<position x="4840" y="1500"/>
 	<column name="rate_id" not-null="true" default-value="gen_random_uuid()">
 		<type name="uuid" length="0"/>
 	</column>
@@ -555,7 +678,10 @@ CAUTION: Do not modify this file unless you know what you are doing.
 		<type name="character varying" length="3"/>
 	</column>
 	<column name="rate" not-null="true">
-		<type name="numeric" length="10" precision="4"/>
+		<type name="numeric" length="17" precision="7"/>
+	</column>
+	<column name="mid_market_rate" not-null="true">
+		<type name="numeric" length="17" precision="7"/>
 	</column>
 	<column name="term_currency" not-null="true">
 		<type name="character varying" length="3"/>
@@ -566,6 +692,12 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	<column name="rate_ts" not-null="true" default-value="date_trunc('milliseconds'::text, CURRENT_TIMESTAMP)">
 		<type name="timestamp with time zone" length="0" with-timezone="true"/>
 	</column>
+	<column name="expiration_ts" not-null="true">
+		<type name="timestamp with time zone" length="0" with-timezone="true"/>
+	</column>
+	<column name="counterparty_id" not-null="true">
+		<type name="uuid" length="0"/>
+	</column>
 	<constraint name="pk_rate" type="pk-constr" table="payment.rate">
 		<columns names="rate_id" ref-type="src-columns"/>
 	</constraint>
@@ -574,35 +706,38 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	</constraint>
 </table>
 
-<table name="quote" layer="0" collapse-mode="2" max-obj-count="12">
+<table name="quote" layer="0" collapse-mode="2" max-obj-count="13">
 	<schema name="payment"/>
 	<role name="vlad"/>
-	<position x="2400" y="80"/>
+	<position x="3220" y="80"/>
 	<column name="quote_id" not-null="true" default-value="gen_random_uuid()">
 		<type name="uuid" length="0"/>
 	</column>
 	<column name="base_amount" not-null="true">
-		<type name="numeric" length="10" precision="2"/>
+		<type name="numeric" length="14" precision="3"/>
 	</column>
 	<column name="base_currency" not-null="true">
 		<type name="character varying" length="3"/>
 	</column>
 	<column name="fixed_fee" not-null="true">
-		<type name="numeric" length="10" precision="2"/>
+		<type name="numeric" length="14" precision="3"/>
 	</column>
 	<column name="variable_fee_percentage" not-null="true">
 		<type name="numeric" length="6" precision="4"/>
 	</column>
 	<column name="rate" not-null="true">
-		<type name="numeric" length="10" precision="4"/>
+		<type name="numeric" length="17" precision="7"/>
 	</column>
 	<column name="term_amount" not-null="true">
-		<type name="numeric" length="10" precision="2"/>
+		<type name="numeric" length="14" precision="3"/>
 	</column>
 	<column name="term_currency" not-null="true">
 		<type name="character varying" length="3"/>
 	</column>
 	<column name="creation_ts" not-null="true" default-value="date_trunc('milliseconds'::text, CURRENT_TIMESTAMP)">
+		<type name="timestamp with time zone" length="0" with-timezone="true"/>
+	</column>
+	<column name="expiration_ts" not-null="true">
 		<type name="timestamp with time zone" length="0" with-timezone="true"/>
 	</column>
 	<column name="customer_id" not-null="true">
@@ -619,7 +754,7 @@ CAUTION: Do not modify this file unless you know what you are doing.
 <table name="payment" layer="0" collapse-mode="2" max-obj-count="8">
 	<schema name="payment"/>
 	<role name="vlad"/>
-	<position x="2400" y="940"/>
+	<position x="3220" y="1020"/>
 	<column name="payment_id" not-null="true" default-value="gen_random_uuid()">
 		<type name="uuid" length="0"/>
 	</column>
@@ -658,7 +793,7 @@ CAUTION: Do not modify this file unless you know what you are doing.
 <table name="payment_status" layer="0" collapse-mode="2" max-obj-count="6">
 	<schema name="payment"/>
 	<role name="vlad"/>
-	<position x="3080" y="1760"/>
+	<position x="3220" y="2040"/>
 	<column name="payment_status_id" not-null="true" default-value="gen_random_uuid()">
 		<type name="uuid" length="0"/>
 	</column>
@@ -679,78 +814,60 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	</constraint>
 </table>
 
-<table name="funding_authorization" layer="0" collapse-mode="2" max-obj-count="6">
+<table name="payment_funding" layer="0" collapse-mode="2" max-obj-count="6">
 	<schema name="payment"/>
 	<role name="vlad"/>
-	<position x="3080" y="80"/>
-	<column name="funding_authorization_id" not-null="true" default-value="gen_random_uuid()">
+	<position x="4040" y="80"/>
+	<column name="payment_funding_id" not-null="true" default-value="gen_random_uuid()">
 		<type name="uuid" length="0"/>
 	</column>
 	<column name="payment_status" not-null="true">
 		<type name="payment.payment_status_type" length="0"/>
 	</column>
-	<column name="funding_authorization_details" not-null="true">
+	<column name="payment_funding_details" not-null="true">
 		<type name="jsonb" length="0"/>
 	</column>
-	<column name="funding_authorization_ts" not-null="true" default-value="date_trunc('milliseconds'::text, CURRENT_TIMESTAMP)">
+	<column name="payment_funding_ts" not-null="true" default-value="date_trunc('milliseconds'::text, CURRENT_TIMESTAMP)">
 		<type name="timestamp with time zone" length="0" with-timezone="true"/>
 	</column>
 	<column name="payment_id" not-null="true">
 		<type name="uuid" length="0"/>
 	</column>
-	<constraint name="pk_funding_authorization" type="pk-constr" table="payment.funding_authorization">
-		<columns names="funding_authorization_id" ref-type="src-columns"/>
+	<constraint name="pk_payment_funding" type="pk-constr" table="payment.payment_funding">
+		<columns names="payment_funding_id" ref-type="src-columns"/>
 	</constraint>
 </table>
 
-<table name="funding_capture" layer="0" collapse-mode="2" max-obj-count="6">
+<table name="payment_fx" layer="0" collapse-mode="2" max-obj-count="15">
 	<schema name="payment"/>
 	<role name="vlad"/>
-	<position x="3080" y="440"/>
-	<column name="funding_capture_id" not-null="true" default-value="gen_random_uuid()">
-		<type name="uuid" length="0"/>
-	</column>
-	<column name="payment_status" not-null="true">
-		<type name="payment.payment_status_type" length="0"/>
-	</column>
-	<column name="funding_capture_details" not-null="true">
-		<type name="jsonb" length="0"/>
-	</column>
-	<column name="funding_capture_ts" not-null="true" default-value="date_trunc('milliseconds'::text, CURRENT_TIMESTAMP)">
-		<type name="timestamp with time zone" length="0" with-timezone="true"/>
-	</column>
-	<column name="payment_id" not-null="true">
-		<type name="uuid" length="0"/>
-	</column>
-	<constraint name="pk_funding_capture" type="pk-constr" table="payment.funding_capture">
-		<columns names="funding_capture_id" ref-type="src-columns"/>
-	</constraint>
-</table>
-
-<table name="payment_fx" layer="0" collapse-mode="2" max-obj-count="13">
-	<schema name="payment"/>
-	<role name="vlad"/>
-	<position x="3080" y="800"/>
+	<position x="4040" y="460"/>
 	<column name="payment_fx_id" not-null="true" default-value="gen_random_uuid()">
 		<type name="uuid" length="0"/>
 	</column>
 	<column name="sell_amount" not-null="true">
-		<type name="numeric" length="10" precision="2"/>
+		<type name="numeric" length="14" precision="3"/>
 	</column>
 	<column name="sell_currency" not-null="true">
 		<type name="character varying" length="3"/>
 	</column>
+	<column name="sell_ts" not-null="true">
+		<type name="timestamp with time zone" length="0" with-timezone="true"/>
+	</column>
 	<column name="mid_market_rate" not-null="true">
-		<type name="numeric" length="10" precision="4"/>
+		<type name="numeric" length="17" precision="7"/>
 	</column>
 	<column name="rate" not-null="true">
-		<type name="numeric" length="10" precision="4"/>
+		<type name="numeric" length="17" precision="7"/>
 	</column>
 	<column name="buy_amount" not-null="true">
-		<type name="numeric" length="10" precision="2"/>
+		<type name="numeric" length="14" precision="3"/>
 	</column>
 	<column name="buy_currency" not-null="true">
 		<type name="character varying" length="3"/>
+	</column>
+	<column name="buy_ts" not-null="true">
+		<type name="timestamp with time zone" length="0" with-timezone="true"/>
 	</column>
 	<column name="fx_reference" not-null="true">
 		<type name="character varying" length="50"/>
@@ -758,10 +875,10 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	<column name="payment_status" not-null="true">
 		<type name="payment.payment_status_type" length="0"/>
 	</column>
-	<column name="fx_trading_ts" not-null="true" default-value="date_trunc('milliseconds'::text, CURRENT_TIMESTAMP)">
-		<type name="timestamp with time zone" length="0" with-timezone="true"/>
-	</column>
 	<column name="payment_id" not-null="true">
+		<type name="uuid" length="0"/>
+	</column>
+	<column name="counterparty_id" not-null="true">
 		<type name="uuid" length="0"/>
 	</column>
 	<constraint name="pk_payment_fx" type="pk-constr" table="payment.payment_fx">
@@ -769,36 +886,36 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	</constraint>
 </table>
 
-<table name="payment_settlement" layer="0" collapse-mode="2" max-obj-count="8">
+<table name="payment_fulfillment" layer="0" collapse-mode="2" max-obj-count="8">
 	<schema name="payment"/>
 	<role name="vlad"/>
-	<position x="3080" y="1320"/>
-	<column name="payment_settlement_id" not-null="true" default-value="gen_random_uuid()">
+	<position x="4040" y="1020"/>
+	<column name="payment_fulfillment_id" not-null="true" default-value="gen_random_uuid()">
 		<type name="uuid" length="0"/>
 	</column>
 	<column name="payment_status" not-null="true">
 		<type name="payment.payment_status_type" length="0"/>
 	</column>
-	<column name="payment_provider_id" not-null="true">
-		<type name="uuid" length="0"/>
-	</column>
-	<column name="payment_provider_reference" not-null="true">
-		<type name="character varying" length="50"/>
-	</column>
-	<column name="payment_settlement_details" not-null="true">
+	<column name="payment_fulfillment_details" not-null="true">
 		<type name="jsonb" length="0"/>
 	</column>
-	<column name="payment_settlement_ts" not-null="true" default-value="date_trunc('milliseconds'::text, CURRENT_TIMESTAMP)">
+	<column name="payment_fulfillment_ts" not-null="true" default-value="date_trunc('milliseconds'::text, CURRENT_TIMESTAMP)">
 		<type name="timestamp with time zone" length="0" with-timezone="true"/>
 	</column>
 	<column name="payment_id" not-null="true">
 		<type name="uuid" length="0"/>
 	</column>
-	<constraint name="pk_payment_settlement" type="pk-constr" table="payment.payment_settlement">
-		<columns names="payment_settlement_id" ref-type="src-columns"/>
+	<column name="correspondent_id" not-null="true">
+		<type name="uuid" length="0"/>
+	</column>
+	<column name="correspondent_reference" not-null="true">
+		<type name="character varying" length="50"/>
+	</column>
+	<constraint name="pk_payment_fulfillment" type="pk-constr" table="payment.payment_fulfillment">
+		<columns names="payment_fulfillment_id" ref-type="src-columns"/>
 	</constraint>
-	<constraint name="uq_payment_provider_and_payment_provider_reference" type="uq-constr" table="payment.payment_settlement">
-		<columns names="payment_provider_id,payment_provider_reference" ref-type="src-columns"/>
+	<constraint name="uq_correspondent_and_correspondent_reference" type="uq-constr" table="payment.payment_fulfillment">
+		<columns names="correspondent_id,correspondent_reference" ref-type="src-columns"/>
 	</constraint>
 </table>
 
@@ -811,7 +928,7 @@ CAUTION: Do not modify this file unless you know what you are doing.
 <table name="payment_check" layer="0" collapse-mode="2" max-obj-count="8">
 	<schema name="payment"/>
 	<role name="vlad"/>
-	<position x="2400" y="1740"/>
+	<position x="4760" y="80"/>
 	<column name="payment_check_id" not-null="true" default-value="gen_random_uuid()">
 		<type name="uuid" length="0"/>
 	</column>
@@ -838,7 +955,7 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	</constraint>
 </table>
 
-<schema name="ledger" layer="0" rect-visible="true" fill-color="#b1fcf6">
+<schema name="ledger" layer="0" rect-visible="true" fill-color="#7663f1">
 	<role name="vlad"/>
 </schema>
 
@@ -848,10 +965,10 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	<enumeration values="ACQUIRER_FEES,AML_CONFISCATED,BENEFICIARY_SCREENING,BENEFICIARY_SCREENING_APPROVED,BENEFICIARY_SCREENING_NEEDS_REVIEW,BENEFICIARY_SCREENING_RINGFENCED,CAPTURED,CLIENT_FUNDS_ALLOCATED,CLIENT_FUNDS_UNALLOCATED,CONTROL,CONTROL_CURRENCYCLOUD_MARGIN,CONTROL_MINIMUM_INTRADAY_LIQUIDITY_BALANCE,CONTROL_MINIMUM_MANDATORY_BALANCE,CONTROL_OFFICE,CONTROL_REGULATORY_CAPITAL,CONTROL_SEGREGATED,CURRENCYCLOUD_MARGIN,FUNDING_CAPTURE_SUCCEEDED,HEDGE_INSTRUCTED,HEDGE_PENDING,MARGIN,MARGIN_DUE,MARGIN_DUE_SEGREGATED,MINIMUM_INTRADAY_LIQUIDITY_BALANCE,MINIMUM_MANDATORY_BALANCE,OFFICE,OWN_FUNDS,PAYMENT_INSTRUCTED,PENDING_SETTLEMENT,PENDING_TRANSFER_OUT_OF_SAFEGUARDING,PENDING_TRANSFER_OUT_OF_SAFEGUARDING_SEGREGATED,PRINCIPAL_DUE,PRINCIPAL_DUE_SEGREGATED,RECONCILIATION_BREAKS,REGULATORY_CAPITAL,SETTLED,SUPPLIER_FEES,TRANSACTION_MONITORING,TRANSACTION_MONITORING_APPROVED,TRANSACTION_MONITORING_NEEDS_REVIEW,TRANSACTION_MONITORING_RINGFENCED,VOLATILITY_NEGATIVE,VOLATILITY_POSITIVE,WRITEOFF_FRAUD"/>
 </usertype>
 
-<table name="account" layer="0" collapse-mode="2" max-obj-count="6">
+<table name="account" layer="0" collapse-mode="2" max-obj-count="8">
 	<schema name="ledger"/>
 	<role name="vlad"/>
-	<position x="120" y="2840"/>
+	<position x="20" y="2460"/>
 	<column name="account_id" not-null="true" default-value="gen_random_uuid()">
 		<type name="uuid" length="0"/>
 	</column>
@@ -861,10 +978,16 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	<column name="currency" not-null="true">
 		<type name="character varying" length="3"/>
 	</column>
+	<column name="accounting_code" not-null="true">
+		<type name="character varying" length="50"/>
+	</column>
 	<column name="creation_ts" not-null="true" default-value="date_trunc('milliseconds'::text, CURRENT_TIMESTAMP)">
 		<type name="timestamp with time zone" length="0" with-timezone="true"/>
 	</column>
-	<column name="account_owner_id" not-null="true">
+	<column name="owner_id" not-null="true">
+		<type name="uuid" length="0"/>
+	</column>
+	<column name="correspondent_id">
 		<type name="uuid" length="0"/>
 	</column>
 	<constraint name="pk_account" type="pk-constr" table="ledger.account">
@@ -872,63 +995,33 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	</constraint>
 </table>
 
-<table name="external_account" layer="0" collapse-mode="2" max-obj-count="8">
-	<schema name="ledger"/>
-	<role name="vlad"/>
-	<position x="120" y="3240"/>
-	<column name="external_account_id" not-null="true" default-value="gen_random_uuid()">
-		<type name="uuid" length="0"/>
-	</column>
-	<column name="account_number" not-null="true">
-		<type name="character varying" length="50"/>
-	</column>
-	<column name="accounting_code" not-null="true">
-		<type name="character varying" length="50"/>
-	</column>
-	<column name="suplementary_reference" not-null="true">
-		<type name="character varying" length="50"/>
-	</column>
-	<column name="creation_ts" not-null="true" default-value="date_trunc('milliseconds'::text, CURRENT_TIMESTAMP)">
-		<type name="timestamp with time zone" length="0" with-timezone="true"/>
-	</column>
-	<column name="account_id" not-null="true">
-		<type name="uuid" length="0"/>
-	</column>
-	<column name="account_correspondent_id" not-null="true">
-		<type name="uuid" length="0"/>
-	</column>
-	<constraint name="pk_external_account" type="pk-constr" table="ledger.external_account">
-		<columns names="external_account_id" ref-type="src-columns"/>
-	</constraint>
-</table>
-
 <table name="account_balance" layer="0" collapse-mode="2" max-obj-count="10">
 	<schema name="ledger"/>
 	<role name="vlad"/>
-	<position x="120" y="2380"/>
+	<position x="20" y="3000"/>
 	<column name="account_balance_id" not-null="true" default-value="gen_random_uuid()">
 		<type name="uuid" length="0"/>
 	</column>
-	<column name="balance_date" not-null="true" default-value="date_trunc('days'::text, CURRENT_TIMESTAMP)">
-		<type name="date" length="0"/>
-	</column>
 	<column name="opening_balance" not-null="true">
-		<type name="numeric" length="10" precision="2"/>
+		<type name="numeric" length="14" precision="3"/>
 	</column>
 	<column name="credit_count" not-null="true">
 		<type name="integer" length="0"/>
 	</column>
 	<column name="credit_amount" not-null="true">
-		<type name="numeric" length="10" precision="2"/>
+		<type name="numeric" length="14" precision="3"/>
 	</column>
 	<column name="debit_count" not-null="true">
 		<type name="integer" length="0"/>
 	</column>
 	<column name="debit_amount" not-null="true">
-		<type name="numeric" length="10" precision="2"/>
+		<type name="numeric" length="14" precision="3"/>
 	</column>
 	<column name="closing_balance" not-null="true">
-		<type name="numeric" length="10" precision="2"/>
+		<type name="numeric" length="14" precision="3"/>
+	</column>
+	<column name="balance_ts" not-null="true" default-value="date_trunc('milliseconds'::text, CURRENT_TIMESTAMP)">
+		<type name="timestamp with time zone" length="0" with-timezone="true"/>
 	</column>
 	<column name="account_id" not-null="true">
 		<type name="uuid" length="0"/>
@@ -938,14 +1031,14 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	</constraint>
 </table>
 
-<table name="account_transaction" layer="0" collapse-mode="2" max-obj-count="6">
+<table name="transaction" layer="0" collapse-mode="2" max-obj-count="6">
 	<schema name="ledger"/>
 	<role name="vlad"/>
-	<position x="1460" y="2820"/>
-	<column name="account_transaction_id" not-null="true" default-value="gen_random_uuid()">
+	<position x="1460" y="3060"/>
+	<column name="transaction_id" not-null="true" default-value="gen_random_uuid()">
 		<type name="uuid" length="0"/>
 	</column>
-	<column name="subject" not-null="true">
+	<column name="executor" not-null="true">
 		<type name="character varying" length="50"/>
 	</column>
 	<column name="currency" not-null="true">
@@ -954,23 +1047,23 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	<column name="transaction_ts" not-null="true" default-value="date_trunc('milliseconds'::text, CURRENT_TIMESTAMP)">
 		<type name="timestamp with time zone" length="0" with-timezone="true"/>
 	</column>
-	<column name="payment_id" not-null="true">
+	<column name="payment_id">
 		<type name="uuid" length="0"/>
 	</column>
-	<constraint name="pk_account_transaction" type="pk-constr" table="ledger.account_transaction">
-		<columns names="account_transaction_id" ref-type="src-columns"/>
+	<constraint name="pk_transaction" type="pk-constr" table="ledger.transaction">
+		<columns names="transaction_id" ref-type="src-columns"/>
 	</constraint>
 </table>
 
-<table name="transaction_entry" layer="0" collapse-mode="2" max-obj-count="6">
+<table name="account_entry" layer="0" collapse-mode="2" max-obj-count="6">
 	<schema name="ledger"/>
 	<role name="vlad"/>
-	<position x="740" y="2820"/>
-	<column name="transaction_entry_id" not-null="true" default-value="gen_random_uuid()">
+	<position x="720" y="2760"/>
+	<column name="account_entry_id" not-null="true" default-value="gen_random_uuid()">
 		<type name="uuid" length="0"/>
 	</column>
 	<column name="entry_amount" not-null="true">
-		<type name="numeric" length="10" precision="2"/>
+		<type name="numeric" length="14" precision="3"/>
 	</column>
 	<column name="entry_reference">
 		<type name="character varying" length="50"/>
@@ -978,53 +1071,80 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	<column name="account_id" not-null="true">
 		<type name="uuid" length="0"/>
 	</column>
-	<column name="account_transaction_id" not-null="true">
+	<column name="transaction_id" not-null="true">
 		<type name="uuid" length="0"/>
 	</column>
-	<constraint name="pk_transaction_entry" type="pk-constr" table="ledger.transaction_entry">
-		<columns names="transaction_entry_id" ref-type="src-columns"/>
+	<constraint name="pk_account_entry" type="pk-constr" table="ledger.account_entry">
+		<columns names="account_entry_id" ref-type="src-columns"/>
 	</constraint>
 </table>
 
-<schema name="reconciliation" layer="0" rect-visible="true" fill-color="#90b5ed">
+<schema name="reconciliation" layer="0" rect-visible="true" fill-color="#dcc225">
 	<role name="vlad"/>
 </schema>
 
-<table name="external_transaction" layer="0" collapse-mode="2" max-obj-count="7">
+<table name="external_account" layer="0" collapse-mode="2" max-obj-count="7">
 	<schema name="reconciliation"/>
 	<role name="vlad"/>
-	<position x="2380" y="3240"/>
-	<column name="external_transaction_id" not-null="true" default-value="gen_random_uuid()">
+	<position x="3200" y="2460"/>
+	<column name="external_account_id" not-null="true" default-value="gen_random_uuid()">
 		<type name="uuid" length="0"/>
 	</column>
-	<column name="transaction_amount" not-null="true">
-		<type name="numeric" length="10" precision="2"/>
-	</column>
-	<column name="transaction_reference" not-null="true">
+	<column name="account_number" not-null="true">
 		<type name="character varying" length="50"/>
 	</column>
-	<column name="transaction_details" not-null="true">
+	<column name="suplementary_reference" not-null="true">
+		<type name="character varying" length="50"/>
+	</column>
+	<column name="creation_ts" not-null="true" default-value="date_trunc('milliseconds'::text, CURRENT_TIMESTAMP)">
+		<type name="timestamp with time zone" length="0" with-timezone="true"/>
+	</column>
+	<column name="correspondent_id" not-null="true">
+		<type name="uuid" length="0"/>
+	</column>
+	<column name="account_id" not-null="true">
+		<type name="uuid" length="0"/>
+	</column>
+	<constraint name="pk_external_account" type="pk-constr" table="reconciliation.external_account">
+		<columns names="external_account_id" ref-type="src-columns"/>
+	</constraint>
+</table>
+
+<table name="external_account_entry" layer="0" collapse-mode="2" max-obj-count="7">
+	<schema name="reconciliation"/>
+	<role name="vlad"/>
+	<position x="4460" y="2800"/>
+	<column name="external_account_entry_id" not-null="true" default-value="gen_random_uuid()">
+		<type name="uuid" length="0"/>
+	</column>
+	<column name="entry_amount" not-null="true">
+		<type name="numeric" length="14" precision="3"/>
+	</column>
+	<column name="entry_reference" not-null="true">
+		<type name="character varying" length="50"/>
+	</column>
+	<column name="entry_details" not-null="true">
 		<type name="jsonb" length="0"/>
 	</column>
-	<column name="transaction_ts" not-null="true">
+	<column name="entry_ts" not-null="true">
 		<type name="timestamp with time zone" length="0" with-timezone="true"/>
 	</column>
 	<column name="external_account_id" not-null="true">
 		<type name="uuid" length="0"/>
 	</column>
-	<constraint name="pk_external_transaction" type="pk-constr" table="reconciliation.external_transaction">
-		<columns names="external_transaction_id" ref-type="src-columns"/>
+	<constraint name="pk_external_account_entry" type="pk-constr" table="reconciliation.external_account_entry">
+		<columns names="external_account_entry_id" ref-type="src-columns"/>
 	</constraint>
 </table>
 
 <table name="reconciliation" layer="0" collapse-mode="2" max-obj-count="7">
 	<schema name="reconciliation"/>
 	<role name="vlad"/>
-	<position x="3100" y="3240"/>
+	<position x="3200" y="3020"/>
 	<column name="reconciliation_id" not-null="true" default-value="gen_random_uuid()">
 		<type name="uuid" length="0"/>
 	</column>
-	<column name="subject" not-null="true">
+	<column name="executor" not-null="true">
 		<type name="character varying" length="50"/>
 	</column>
 	<column name="reconciliation_details">
@@ -1033,10 +1153,10 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	<column name="reconciliation_ts" not-null="true" default-value="date_trunc('milliseconds'::text, CURRENT_TIMESTAMP)">
 		<type name="timestamp with time zone" length="0" with-timezone="true"/>
 	</column>
-	<column name="transaction_entry_id" not-null="true">
+	<column name="external_account_entry_id" not-null="true">
 		<type name="uuid" length="0"/>
 	</column>
-	<column name="external_transaction_id" not-null="true">
+	<column name="account_entry_id" not-null="true">
 		<type name="uuid" length="0"/>
 	</column>
 	<constraint name="pk_reconciliation" type="pk-constr" table="reconciliation.reconciliation">
@@ -1056,12 +1176,6 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	<columns names="legal_entity_id" ref-type="dst-columns"/>
 </constraint>
 
-<constraint name="fk_customer_holds_nationality" type="fk-constr" comparison-type="MATCH SIMPLE"
-	 upd-action="RESTRICT" del-action="RESTRICT" ref-table="reference.country" table="customer.customer">
-	<columns names="nationality" ref-type="src-columns"/>
-	<columns names="alpha2_code" ref-type="dst-columns"/>
-</constraint>
-
 <constraint name="fk_customer_lives_in_residence_country" type="fk-constr" comparison-type="MATCH SIMPLE"
 	 upd-action="RESTRICT" del-action="RESTRICT" ref-table="reference.country" table="customer.customer">
 	<columns names="residence" ref-type="src-columns"/>
@@ -1078,6 +1192,12 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	 upd-action="RESTRICT" del-action="RESTRICT" ref-table="customer.customer_onboarding" table="customer.customer">
 	<columns names="last_onboarding_stage_id" ref-type="src-columns"/>
 	<columns names="customer_onboarding_id" ref-type="dst-columns"/>
+</constraint>
+
+<constraint name="fk_customer_address_belongs_to_customer" type="fk-constr" comparison-type="MATCH SIMPLE"
+	 upd-action="RESTRICT" del-action="RESTRICT" ref-table="customer.customer" table="customer.customer_address">
+	<columns names="customer_id" ref-type="src-columns"/>
+	<columns names="customer_id" ref-type="dst-columns"/>
 </constraint>
 
 <constraint name="fk_customer_onboarding_tracks_customer_registration_process" type="fk-constr" comparison-type="MATCH SIMPLE"
@@ -1128,6 +1248,12 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	<columns names="customer_id" ref-type="dst-columns"/>
 </constraint>
 
+<constraint name="fk_beneficiary_is_registred_by_customer" type="fk-constr" comparison-type="MATCH SIMPLE"
+	 upd-action="RESTRICT" del-action="RESTRICT" ref-table="customer.customer" table="customer.customer_audit">
+	<columns names="customer_id" ref-type="src-columns"/>
+	<columns names="customer_id" ref-type="dst-columns"/>
+</constraint>
+
 <constraint name="fk_base_currency_is_valid_currency" type="fk-constr" comparison-type="MATCH SIMPLE"
 	 upd-action="RESTRICT" del-action="RESTRICT" ref-table="reference.currency" table="payment.base_currency">
 	<columns names="base_currency" ref-type="src-columns"/>
@@ -1137,6 +1263,12 @@ CAUTION: Do not modify this file unless you know what you are doing.
 <constraint name="fk_base_currency_is_supported_by_legal_entity" type="fk-constr" comparison-type="MATCH SIMPLE"
 	 upd-action="RESTRICT" del-action="RESTRICT" ref-table="payment.legal_entity" table="payment.base_currency">
 	<columns names="legal_entity_id" ref-type="src-columns"/>
+	<columns names="legal_entity_id" ref-type="dst-columns"/>
+</constraint>
+
+<constraint name="fk_base_currency_has_correspondent_legal_entity" type="fk-constr" comparison-type="MATCH SIMPLE"
+	 upd-action="RESTRICT" del-action="RESTRICT" ref-table="payment.legal_entity" table="payment.base_currency">
+	<columns names="correspondent_id" ref-type="src-columns"/>
 	<columns names="legal_entity_id" ref-type="dst-columns"/>
 </constraint>
 
@@ -1154,7 +1286,7 @@ CAUTION: Do not modify this file unless you know what you are doing.
 
 <constraint name="fk_term_currency_has_correspondent_legal_entity" type="fk-constr" comparison-type="MATCH SIMPLE"
 	 upd-action="RESTRICT" del-action="RESTRICT" ref-table="payment.legal_entity" table="payment.term_currency">
-	<columns names="correspondent_legal_entity_id" ref-type="src-columns"/>
+	<columns names="correspondent_id" ref-type="src-columns"/>
 	<columns names="legal_entity_id" ref-type="dst-columns"/>
 </constraint>
 
@@ -1168,6 +1300,12 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	 upd-action="RESTRICT" del-action="RESTRICT" ref-table="reference.currency" table="payment.rate">
 	<columns names="term_currency" ref-type="src-columns"/>
 	<columns names="iso_code" ref-type="dst-columns"/>
+</constraint>
+
+<constraint name="fk_rate_has_counterparty_legal_entity" type="fk-constr" comparison-type="MATCH SIMPLE"
+	 upd-action="RESTRICT" del-action="RESTRICT" ref-table="payment.legal_entity" table="payment.rate">
+	<columns names="counterparty_id" ref-type="src-columns"/>
+	<columns names="legal_entity_id" ref-type="dst-columns"/>
 </constraint>
 
 <constraint name="fk_quote_base_currency_is_valid_currency" type="fk-constr" comparison-type="MATCH SIMPLE"
@@ -1218,14 +1356,8 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	<columns names="payment_id" ref-type="dst-columns"/>
 </constraint>
 
-<constraint name="fk_funding_authorization_belongs_to_payment" type="fk-constr" comparison-type="MATCH SIMPLE"
-	 upd-action="RESTRICT" del-action="RESTRICT" ref-table="payment.payment" table="payment.funding_authorization">
-	<columns names="payment_id" ref-type="src-columns"/>
-	<columns names="payment_id" ref-type="dst-columns"/>
-</constraint>
-
-<constraint name="fk_funding_capture_belongs_to_payment" type="fk-constr" comparison-type="MATCH SIMPLE"
-	 upd-action="RESTRICT" del-action="RESTRICT" ref-table="payment.payment" table="payment.funding_capture">
+<constraint name="fk_payment_funding_belongs_to_payment" type="fk-constr" comparison-type="MATCH SIMPLE"
+	 upd-action="RESTRICT" del-action="RESTRICT" ref-table="payment.payment" table="payment.payment_funding">
 	<columns names="payment_id" ref-type="src-columns"/>
 	<columns names="payment_id" ref-type="dst-columns"/>
 </constraint>
@@ -1248,15 +1380,21 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	<columns names="payment_id" ref-type="dst-columns"/>
 </constraint>
 
-<constraint name="fk_payment_settlement_belongs_to_payment" type="fk-constr" comparison-type="MATCH SIMPLE"
-	 upd-action="RESTRICT" del-action="RESTRICT" ref-table="payment.payment" table="payment.payment_settlement">
+<constraint name="fk_payment_fx_has_counterparty_legal_entity" type="fk-constr" comparison-type="MATCH SIMPLE"
+	 upd-action="RESTRICT" del-action="RESTRICT" ref-table="payment.legal_entity" table="payment.payment_fx">
+	<columns names="counterparty_id" ref-type="src-columns"/>
+	<columns names="legal_entity_id" ref-type="dst-columns"/>
+</constraint>
+
+<constraint name="fk_payment_fulfillment_belongs_to_payment" type="fk-constr" comparison-type="MATCH SIMPLE"
+	 upd-action="RESTRICT" del-action="RESTRICT" ref-table="payment.payment" table="payment.payment_fulfillment">
 	<columns names="payment_id" ref-type="src-columns"/>
 	<columns names="payment_id" ref-type="dst-columns"/>
 </constraint>
 
-<constraint name="fk_payment_settlement_provider_is_legal_entity" type="fk-constr" comparison-type="MATCH SIMPLE"
-	 upd-action="RESTRICT" del-action="RESTRICT" ref-table="payment.legal_entity" table="payment.payment_settlement">
-	<columns names="payment_provider_id" ref-type="src-columns"/>
+<constraint name="fk_payment_fulfillment_has_correspondent_legal_entity" type="fk-constr" comparison-type="MATCH SIMPLE"
+	 upd-action="RESTRICT" del-action="RESTRICT" ref-table="payment.legal_entity" table="payment.payment_fulfillment">
+	<columns names="correspondent_id" ref-type="src-columns"/>
 	<columns names="legal_entity_id" ref-type="dst-columns"/>
 </constraint>
 
@@ -1284,21 +1422,15 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	<columns names="iso_code" ref-type="dst-columns"/>
 </constraint>
 
-<constraint name="fk_account_owner_is_legal_entity" type="fk-constr" comparison-type="MATCH SIMPLE"
+<constraint name="fk_account_has_owner_legal_entity" type="fk-constr" comparison-type="MATCH SIMPLE"
 	 upd-action="RESTRICT" del-action="RESTRICT" ref-table="payment.legal_entity" table="ledger.account">
-	<columns names="account_owner_id" ref-type="src-columns"/>
+	<columns names="owner_id" ref-type="src-columns"/>
 	<columns names="legal_entity_id" ref-type="dst-columns"/>
 </constraint>
 
-<constraint name="fk_external_account_belongs_and_extends_account" type="fk-constr" comparison-type="MATCH SIMPLE"
-	 upd-action="RESTRICT" del-action="RESTRICT" ref-table="ledger.account" table="ledger.external_account">
-	<columns names="account_id" ref-type="src-columns"/>
-	<columns names="account_id" ref-type="dst-columns"/>
-</constraint>
-
-<constraint name="fk_external_account_correspondent_is_legal_entity" type="fk-constr" comparison-type="MATCH SIMPLE"
-	 upd-action="RESTRICT" del-action="RESTRICT" ref-table="payment.legal_entity" table="ledger.external_account">
-	<columns names="account_correspondent_id" ref-type="src-columns"/>
+<constraint name="fk_account_has_correspondent_legal_entity" type="fk-constr" comparison-type="MATCH SIMPLE"
+	 upd-action="RESTRICT" del-action="RESTRICT" ref-table="payment.legal_entity" table="ledger.account">
+	<columns names="correspondent_id" ref-type="src-columns"/>
 	<columns names="legal_entity_id" ref-type="dst-columns"/>
 </constraint>
 
@@ -1308,358 +1440,394 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	<columns names="account_id" ref-type="dst-columns"/>
 </constraint>
 
-<constraint name="fk_account_transaction_currency_is_valid_currency" type="fk-constr" comparison-type="MATCH SIMPLE"
-	 upd-action="RESTRICT" del-action="RESTRICT" ref-table="reference.currency" table="ledger.account_transaction">
+<constraint name="fk_transaction_currency_is_valid_currency" type="fk-constr" comparison-type="MATCH SIMPLE"
+	 upd-action="RESTRICT" del-action="RESTRICT" ref-table="reference.currency" table="ledger.transaction">
 	<columns names="currency" ref-type="src-columns"/>
 	<columns names="iso_code" ref-type="dst-columns"/>
 </constraint>
 
-<constraint name="fk_account_transaction_belongs_to_payment" type="fk-constr" comparison-type="MATCH SIMPLE"
-	 upd-action="RESTRICT" del-action="RESTRICT" ref-table="payment.payment" table="ledger.account_transaction">
+<constraint name="fk_transaction_belongs_to_payment" type="fk-constr" comparison-type="MATCH SIMPLE"
+	 upd-action="RESTRICT" del-action="RESTRICT" ref-table="payment.payment" table="ledger.transaction">
 	<columns names="payment_id" ref-type="src-columns"/>
 	<columns names="payment_id" ref-type="dst-columns"/>
 </constraint>
 
-<constraint name="fk_transaction_entry_belongs_to_account" type="fk-constr" comparison-type="MATCH SIMPLE"
-	 upd-action="RESTRICT" del-action="RESTRICT" ref-table="ledger.account" table="ledger.transaction_entry">
+<constraint name="fk_account_entry_belongs_to_account" type="fk-constr" comparison-type="MATCH SIMPLE"
+	 upd-action="RESTRICT" del-action="RESTRICT" ref-table="ledger.account" table="ledger.account_entry">
 	<columns names="account_id" ref-type="src-columns"/>
 	<columns names="account_id" ref-type="dst-columns"/>
 </constraint>
 
-<constraint name="fk_transaction_entry_belongs_to_account_transaction" type="fk-constr" comparison-type="MATCH SIMPLE"
-	 upd-action="RESTRICT" del-action="RESTRICT" ref-table="ledger.account_transaction" table="ledger.transaction_entry">
-	<columns names="account_transaction_id" ref-type="src-columns"/>
-	<columns names="account_transaction_id" ref-type="dst-columns"/>
+<constraint name="fk_account_entry_belongs_to_transaction" type="fk-constr" comparison-type="MATCH SIMPLE"
+	 upd-action="RESTRICT" del-action="RESTRICT" ref-table="ledger.transaction" table="ledger.account_entry">
+	<columns names="transaction_id" ref-type="src-columns"/>
+	<columns names="transaction_id" ref-type="dst-columns"/>
 </constraint>
 
-<constraint name="fk_external_transaction_belongs_to_external_account" type="fk-constr" comparison-type="MATCH SIMPLE"
-	 upd-action="RESTRICT" del-action="RESTRICT" ref-table="ledger.external_account" table="reconciliation.external_transaction">
+<constraint name="fk_external_account_has_correspondent_legal_entity" type="fk-constr" comparison-type="MATCH SIMPLE"
+	 upd-action="RESTRICT" del-action="RESTRICT" ref-table="payment.legal_entity" table="reconciliation.external_account">
+	<columns names="correspondent_id" ref-type="src-columns"/>
+	<columns names="legal_entity_id" ref-type="dst-columns"/>
+</constraint>
+
+<constraint name="fk_external_account_belongs_and_extends_account" type="fk-constr" comparison-type="MATCH SIMPLE"
+	 upd-action="RESTRICT" del-action="RESTRICT" ref-table="ledger.account" table="reconciliation.external_account">
+	<columns names="account_id" ref-type="src-columns"/>
+	<columns names="account_id" ref-type="dst-columns"/>
+</constraint>
+
+<constraint name="fk_external_account_entry_belongs_to_external_account" type="fk-constr" comparison-type="MATCH SIMPLE"
+	 upd-action="RESTRICT" del-action="RESTRICT" ref-table="reconciliation.external_account" table="reconciliation.external_account_entry">
 	<columns names="external_account_id" ref-type="src-columns"/>
 	<columns names="external_account_id" ref-type="dst-columns"/>
 </constraint>
 
-<constraint name="fk_reconciliation_verifies_transaction_entry" type="fk-constr" comparison-type="MATCH SIMPLE"
-	 upd-action="RESTRICT" del-action="RESTRICT" ref-table="ledger.transaction_entry" table="reconciliation.reconciliation">
-	<columns names="transaction_entry_id" ref-type="src-columns"/>
-	<columns names="transaction_entry_id" ref-type="dst-columns"/>
+<constraint name="fk_reconciliation_verifies_external_account_entry" type="fk-constr" comparison-type="MATCH SIMPLE"
+	 upd-action="RESTRICT" del-action="RESTRICT" ref-table="reconciliation.external_account_entry" table="reconciliation.reconciliation">
+	<columns names="external_account_entry_id" ref-type="src-columns"/>
+	<columns names="external_account_entry_id" ref-type="dst-columns"/>
 </constraint>
 
-<constraint name="fk_reconciliation_verifies_external_transaction" type="fk-constr" comparison-type="MATCH SIMPLE"
-	 upd-action="RESTRICT" del-action="RESTRICT" ref-table="reconciliation.external_transaction" table="reconciliation.reconciliation">
-	<columns names="external_transaction_id" ref-type="src-columns"/>
-	<columns names="external_transaction_id" ref-type="dst-columns"/>
+<constraint name="fk_reconciliation_verifies_account_entry" type="fk-constr" comparison-type="MATCH SIMPLE"
+	 upd-action="RESTRICT" del-action="RESTRICT" ref-table="ledger.account_entry" table="reconciliation.reconciliation">
+	<columns names="account_entry_id" ref-type="src-columns"/>
+	<columns names="account_entry_id" ref-type="dst-columns"/>
 </constraint>
 
 <relationship name="rel_legal_entity_country" type="relfk" layer="0"
-	 custom-color="#c9bf3a"
+	 custom-color="#030dde"
 	 src-table="payment.legal_entity"
 	 dst-table="reference.country" reference-fk="fk_legal_entity_is_registered_in_country"
 	 src-required="false" dst-required="false"/>
 
 <relationship name="rel_legal_entity_legal_entity" type="relfk" layer="0"
-	 custom-color="#b7c2e0"
+	 custom-color="#636905"
 	 src-table="payment.legal_entity"
 	 dst-table="payment.legal_entity" reference-fk="fk_legal_entity_is_branch_of_parent_legal_entity"
 	 src-required="false" dst-required="false">
 	<line>
-		<position x="4451.79" y="1833.82"/>
-	<position x="4451.79" y="1717"/>
-	<position x="4299.19" y="1717"/>
+		<position x="4471.79" y="1613.82"/>
+	<position x="4471.79" y="1497"/>
+	<position x="4319.19" y="1497"/>
 	</line>
 </relationship>
 
 <relationship name="rel_customer_country" type="relfk" layer="0"
-	 custom-color="#8ccd9c"
-	 src-table="customer.customer"
-	 dst-table="reference.country" reference-fk="fk_customer_holds_nationality"
-	 src-required="false" dst-required="false"/>
-
-<relationship name="rel_customer_country1" type="relfk" layer="0"
-	 custom-color="#0bb61c"
+	 custom-color="#603480"
 	 src-table="customer.customer"
 	 dst-table="reference.country" reference-fk="fk_customer_lives_in_residence_country"
 	 src-required="false" dst-required="false"/>
 
 <relationship name="rel_customer_legal_entity" type="relfk" layer="0"
-	 custom-color="#2e57a6"
+	 custom-color="#a7f20e"
 	 src-table="customer.customer"
 	 dst-table="payment.legal_entity" reference-fk="fk_customer_belongs_to_legal_entity"
 	 src-required="false" dst-required="false"/>
 
 <relationship name="rel_customer_customer_onboarding" type="relfk" layer="0"
-	 custom-color="#da8b34"
+	 custom-color="#8e4c89"
 	 src-table="customer.customer"
 	 dst-table="customer.customer_onboarding" reference-fk="fk_customer_is_in_last_onboarding_stage"
 	 src-required="false" dst-required="false"/>
 
+<relationship name="rel_customer_address_customer" type="relfk" layer="0"
+	 custom-color="#282c7f"
+	 src-table="customer.customer_address"
+	 dst-table="customer.customer" reference-fk="fk_customer_address_belongs_to_customer"
+	 src-required="false" dst-required="false"/>
+
 <relationship name="rel_customer_onboarding_customer" type="relfk" layer="0"
-	 custom-color="#33a2e6"
+	 custom-color="#054480"
 	 src-table="customer.customer_onboarding"
 	 dst-table="customer.customer" reference-fk="fk_customer_onboarding_tracks_customer_registration_process"
 	 src-required="false" dst-required="false"/>
 
 <relationship name="rel_customer_consent_customer" type="relfk" layer="0"
-	 custom-color="#bd050d"
+	 custom-color="#6734ad"
 	 src-table="customer.customer_consent"
 	 dst-table="customer.customer" reference-fk="fk_customer_consent_is_given_by_customer"
 	 src-required="false" dst-required="false"/>
 
 <relationship name="rel_customer_device_customer" type="relfk" layer="0"
-	 custom-color="#6ca783"
+	 custom-color="#80f2b2"
 	 src-table="customer.customer_device"
 	 dst-table="customer.customer" reference-fk="fk_customer_device_belongs_to_customer"
 	 src-required="false" dst-required="false"/>
 
 <relationship name="rel_customer_document_customer" type="relfk" layer="0"
-	 custom-color="#6b7d9b"
+	 custom-color="#993826"
 	 src-table="customer.customer_document"
 	 dst-table="customer.customer" reference-fk="fk_customer_document_uploaded_by_customer"
 	 src-required="false" dst-required="false"/>
 
 <relationship name="rel_customer_review_customer" type="relfk" layer="0"
-	 custom-color="#5b344e"
+	 custom-color="#99307b"
 	 src-table="customer.customer_review"
 	 dst-table="customer.customer" reference-fk="fk_customer_review_describes_customer"
 	 src-required="false" dst-required="false"/>
 
 <relationship name="rel_customer_risk_profile_customer" type="relfk" layer="0"
-	 custom-color="#6a9d5a"
+	 custom-color="#54fc86"
 	 src-table="customer.customer_risk_profile"
 	 dst-table="customer.customer" reference-fk="fk_customer_risk_profile_describes_customer"
 	 src-required="false" dst-required="false"/>
 
 <relationship name="rel_customer_business_profile_customer" type="relfk" layer="0"
-	 custom-color="#0fef6e"
+	 custom-color="#bf4549"
 	 src-table="customer.customer_business_profile"
 	 dst-table="customer.customer" reference-fk="fk_customer_business_profile_describes_customer"
 	 src-required="false" dst-required="false"/>
 
 <relationship name="rel_beneficiary_customer" type="relfk" layer="0"
-	 custom-color="#06984a"
+	 custom-color="#5d1c36"
 	 src-table="customer.beneficiary"
 	 dst-table="customer.customer" reference-fk="fk_beneficiary_is_registred_by_customer"
 	 src-required="false" dst-required="false"/>
 
+<relationship name="rel_customer_audit_customer" type="relfk" layer="0"
+	 custom-color="#523706"
+	 src-table="customer.customer_audit"
+	 dst-table="customer.customer" reference-fk="fk_beneficiary_is_registred_by_customer"
+	 src-required="false" dst-required="false"/>
+
 <relationship name="rel_base_currency_currency" type="relfk" layer="0"
-	 custom-color="#9433cf"
+	 custom-color="#0fa661"
 	 src-table="payment.base_currency"
 	 dst-table="reference.currency" reference-fk="fk_base_currency_is_valid_currency"
 	 src-required="false" dst-required="false"/>
 
 <relationship name="rel_base_currency_legal_entity" type="relfk" layer="0"
-	 custom-color="#1fdf77"
+	 custom-color="#d19fa5"
 	 src-table="payment.base_currency"
 	 dst-table="payment.legal_entity" reference-fk="fk_base_currency_is_supported_by_legal_entity"
 	 src-required="false" dst-required="false"/>
 
+<relationship name="rel_base_currency_legal_entity1" type="relfk" layer="0"
+	 custom-color="#b3a75b"
+	 src-table="payment.base_currency"
+	 dst-table="payment.legal_entity" reference-fk="fk_base_currency_has_correspondent_legal_entity"
+	 src-required="false" dst-required="false"/>
+
 <relationship name="rel_term_currency_currency" type="relfk" layer="0"
-	 custom-color="#062de9"
+	 custom-color="#6b311e"
 	 src-table="payment.term_currency"
 	 dst-table="reference.currency" reference-fk="fk_term_currency_is_valid_currency"
 	 src-required="false" dst-required="false"/>
 
 <relationship name="rel_term_currency_legal_entity" type="relfk" layer="0"
-	 custom-color="#b6101a"
+	 custom-color="#195c1d"
 	 src-table="payment.term_currency"
 	 dst-table="payment.legal_entity" reference-fk="fk_term_currency_is_supported_by_legal_entity"
 	 src-required="false" dst-required="false"/>
 
 <relationship name="rel_term_currency_legal_entity1" type="relfk" layer="0"
-	 custom-color="#8468b2"
+	 custom-color="#4edaf7"
 	 src-table="payment.term_currency"
 	 dst-table="payment.legal_entity" reference-fk="fk_term_currency_has_correspondent_legal_entity"
 	 src-required="false" dst-required="false"/>
 
 <relationship name="rel_rate_currency" type="relfk" layer="0"
-	 custom-color="#820028"
+	 custom-color="#d5d564"
 	 src-table="payment.rate"
 	 dst-table="reference.currency" reference-fk="fk_rate_base_currency_is_valid_currency"
 	 src-required="false" dst-required="false"/>
 
 <relationship name="rel_rate_currency1" type="relfk" layer="0"
-	 custom-color="#9b93c6"
+	 custom-color="#71b863"
 	 src-table="payment.rate"
 	 dst-table="reference.currency" reference-fk="fk_rate_term_currency_is_valid_currency"
 	 src-required="false" dst-required="false"/>
 
+<relationship name="rel_rate_legal_entity" type="relfk" layer="0"
+	 custom-color="#bd7617"
+	 src-table="payment.rate"
+	 dst-table="payment.legal_entity" reference-fk="fk_rate_has_counterparty_legal_entity"
+	 src-required="false" dst-required="false"/>
+
 <relationship name="rel_quote_currency" type="relfk" layer="0"
-	 custom-color="#df88f9"
+	 custom-color="#f6c85b"
 	 src-table="payment.quote"
 	 dst-table="reference.currency" reference-fk="fk_quote_base_currency_is_valid_currency"
 	 src-required="false" dst-required="false"/>
 
 <relationship name="rel_quote_currency1" type="relfk" layer="0"
-	 custom-color="#fc035f"
+	 custom-color="#61d506"
 	 src-table="payment.quote"
 	 dst-table="reference.currency" reference-fk="fk_quote_term_currency_is_valid_currency"
 	 src-required="false" dst-required="false"/>
 
 <relationship name="rel_quote_customer" type="relfk" layer="0"
-	 custom-color="#af815c"
+	 custom-color="#c3451d"
 	 src-table="payment.quote"
 	 dst-table="customer.customer" reference-fk="fk_quote_is_selected_by_customer"
 	 src-required="false" dst-required="false"/>
 
 <relationship name="rel_payment_customer" type="relfk" layer="0"
-	 custom-color="#d6a885"
+	 custom-color="#4d02c3"
 	 src-table="payment.payment"
 	 dst-table="customer.customer" reference-fk="fk_payment_is_requested_by_customer"
 	 src-required="false" dst-required="false"/>
 
 <relationship name="rel_payment_beneficiary" type="relfk" layer="0"
-	 custom-color="#25408d"
+	 custom-color="#270364"
 	 src-table="payment.payment"
 	 dst-table="customer.beneficiary" reference-fk="fk_payment_is_directed_to_beneficiary"
 	 src-required="false" dst-required="false"/>
 
 <relationship name="rel_payment_quote" type="relfk" layer="0"
-	 custom-color="#c80e0a"
+	 custom-color="#8e8e06"
 	 src-table="payment.payment"
 	 dst-table="payment.quote" reference-fk="fk_payment_uses_quote"
 	 src-required="false" dst-required="false"/>
 
 <relationship name="rel_payment_payment_status" type="relfk" layer="0"
-	 custom-color="#da3847"
+	 custom-color="#d3f295"
 	 src-table="payment.payment"
 	 dst-table="payment.payment_status" reference-fk="fk_payment_is_in_last_payment_status"
 	 src-required="false" dst-required="false"/>
 
 <relationship name="rel_payment_status_payment" type="relfk" layer="0"
-	 custom-color="#ec3260"
+	 custom-color="#839ff2"
 	 src-table="payment.payment_status"
 	 dst-table="payment.payment" reference-fk="fk_payment_status_tracks_payment_progress"
 	 src-required="false" dst-required="false"/>
 
-<relationship name="rel_funding_authorization_payment" type="relfk" layer="0"
-	 custom-color="#12fe21"
-	 src-table="payment.funding_authorization"
-	 dst-table="payment.payment" reference-fk="fk_funding_authorization_belongs_to_payment"
-	 src-required="false" dst-required="false"/>
-
-<relationship name="rel_funding_capture_payment" type="relfk" layer="0"
-	 custom-color="#59fdca"
-	 src-table="payment.funding_capture"
-	 dst-table="payment.payment" reference-fk="fk_funding_capture_belongs_to_payment"
+<relationship name="rel_payment_funding_payment" type="relfk" layer="0"
+	 custom-color="#566916"
+	 src-table="payment.payment_funding"
+	 dst-table="payment.payment" reference-fk="fk_payment_funding_belongs_to_payment"
 	 src-required="false" dst-required="false"/>
 
 <relationship name="rel_payment_fx_currency" type="relfk" layer="0"
-	 custom-color="#8ec548"
+	 custom-color="#e55cc7"
 	 src-table="payment.payment_fx"
 	 dst-table="reference.currency" reference-fk="fk_payment_fx_sell_currency_is_valid_currency"
 	 src-required="false" dst-required="false"/>
 
 <relationship name="rel_payment_fx_currency1" type="relfk" layer="0"
-	 custom-color="#46b4c6"
+	 custom-color="#19aeb3"
 	 src-table="payment.payment_fx"
 	 dst-table="reference.currency" reference-fk="fk_payment_fx_buy_currency_is_valid_currency"
 	 src-required="false" dst-required="false"/>
 
 <relationship name="rel_payment_fx_payment" type="relfk" layer="0"
-	 custom-color="#d1e55d"
+	 custom-color="#4731d5"
 	 src-table="payment.payment_fx"
 	 dst-table="payment.payment" reference-fk="fk_payment_fx_belongs_to_payment"
 	 src-required="false" dst-required="false"/>
 
-<relationship name="rel_payment_settlement_payment" type="relfk" layer="0"
-	 custom-color="#bc1a74"
-	 src-table="payment.payment_settlement"
-	 dst-table="payment.payment" reference-fk="fk_payment_settlement_belongs_to_payment"
+<relationship name="rel_payment_fx_legal_entity" type="relfk" layer="0"
+	 custom-color="#ce5db6"
+	 src-table="payment.payment_fx"
+	 dst-table="payment.legal_entity" reference-fk="fk_payment_fx_has_counterparty_legal_entity"
 	 src-required="false" dst-required="false"/>
 
-<relationship name="rel_payment_settlement_legal_entity" type="relfk" layer="0"
-	 custom-color="#be5332"
-	 src-table="payment.payment_settlement"
-	 dst-table="payment.legal_entity" reference-fk="fk_payment_settlement_provider_is_legal_entity"
+<relationship name="rel_payment_fulfillment_payment" type="relfk" layer="0"
+	 custom-color="#552713"
+	 src-table="payment.payment_fulfillment"
+	 dst-table="payment.payment" reference-fk="fk_payment_fulfillment_belongs_to_payment"
+	 src-required="false" dst-required="false"/>
+
+<relationship name="rel_payment_fulfillment_legal_entity" type="relfk" layer="0"
+	 custom-color="#6e09ca"
+	 src-table="payment.payment_fulfillment"
+	 dst-table="payment.legal_entity" reference-fk="fk_payment_fulfillment_has_correspondent_legal_entity"
 	 src-required="false" dst-required="false"/>
 
 <relationship name="rel_payment_check_customer" type="relfk" layer="0"
-	 custom-color="#0c6cce"
+	 custom-color="#d525a8"
 	 src-table="payment.payment_check"
 	 dst-table="customer.customer" reference-fk="fk_payment_check_includes_customer"
 	 src-required="false" dst-required="false"/>
 
 <relationship name="rel_payment_check_beneficiary" type="relfk" layer="0"
-	 custom-color="#f51362"
+	 custom-color="#196e22"
 	 src-table="payment.payment_check"
 	 dst-table="customer.beneficiary" reference-fk="fk_payment_check_includes_beneficiary"
 	 src-required="false" dst-required="false"/>
 
 <relationship name="rel_payment_check_payment" type="relfk" layer="0"
-	 custom-color="#f5e112"
+	 custom-color="#ea7d1b"
 	 src-table="payment.payment_check"
 	 dst-table="payment.payment" reference-fk="fk_payment_check_includes_payment"
 	 src-required="false" dst-required="false"/>
 
 <relationship name="rel_account_currency" type="relfk" layer="0"
-	 custom-color="#6bcae7"
+	 custom-color="#9314f3"
 	 src-table="ledger.account"
 	 dst-table="reference.currency" reference-fk="fk_account_currency_is_valid_currency"
 	 src-required="false" dst-required="false"/>
 
 <relationship name="rel_account_legal_entity" type="relfk" layer="0"
-	 custom-color="#2cd92f"
+	 custom-color="#8fd1b4"
 	 src-table="ledger.account"
-	 dst-table="payment.legal_entity" reference-fk="fk_account_owner_is_legal_entity"
+	 dst-table="payment.legal_entity" reference-fk="fk_account_has_owner_legal_entity"
 	 src-required="false" dst-required="false"/>
 
-<relationship name="rel_external_account_account" type="relfk" layer="0"
-	 custom-color="#462c3b"
-	 src-table="ledger.external_account"
-	 dst-table="ledger.account" reference-fk="fk_external_account_belongs_and_extends_account"
-	 src-required="false" dst-required="false"/>
-
-<relationship name="rel_external_account_legal_entity" type="relfk" layer="0"
-	 custom-color="#e863e7"
-	 src-table="ledger.external_account"
-	 dst-table="payment.legal_entity" reference-fk="fk_external_account_correspondent_is_legal_entity"
+<relationship name="rel_account_legal_entity1" type="relfk" layer="0"
+	 custom-color="#1f001a"
+	 src-table="ledger.account"
+	 dst-table="payment.legal_entity" reference-fk="fk_account_has_correspondent_legal_entity"
 	 src-required="false" dst-required="false"/>
 
 <relationship name="rel_account_balance_account" type="relfk" layer="0"
-	 custom-color="#fc20f8"
+	 custom-color="#ebdc78"
 	 src-table="ledger.account_balance"
 	 dst-table="ledger.account" reference-fk="fk_account_balance_belongs_to_account"
 	 src-required="false" dst-required="false"/>
 
-<relationship name="rel_account_transaction_currency" type="relfk" layer="0"
-	 custom-color="#8dc573"
-	 src-table="ledger.account_transaction"
-	 dst-table="reference.currency" reference-fk="fk_account_transaction_currency_is_valid_currency"
+<relationship name="rel_transaction_currency" type="relfk" layer="0"
+	 custom-color="#9fda18"
+	 src-table="ledger.transaction"
+	 dst-table="reference.currency" reference-fk="fk_transaction_currency_is_valid_currency"
 	 src-required="false" dst-required="false"/>
 
-<relationship name="rel_account_transaction_payment" type="relfk" layer="0"
-	 custom-color="#1907f7"
-	 src-table="ledger.account_transaction"
-	 dst-table="payment.payment" reference-fk="fk_account_transaction_belongs_to_payment"
+<relationship name="rel_transaction_payment" type="relfk" layer="0"
+	 custom-color="#8c06c1"
+	 src-table="ledger.transaction"
+	 dst-table="payment.payment" reference-fk="fk_transaction_belongs_to_payment"
 	 src-required="false" dst-required="false"/>
 
-<relationship name="rel_transaction_entry_account" type="relfk" layer="0"
-	 custom-color="#2f45da"
-	 src-table="ledger.transaction_entry"
-	 dst-table="ledger.account" reference-fk="fk_transaction_entry_belongs_to_account"
+<relationship name="rel_account_entry_account" type="relfk" layer="0"
+	 custom-color="#074c56"
+	 src-table="ledger.account_entry"
+	 dst-table="ledger.account" reference-fk="fk_account_entry_belongs_to_account"
 	 src-required="false" dst-required="false"/>
 
-<relationship name="rel_transaction_entry_account_transaction" type="relfk" layer="0"
-	 custom-color="#50e09f"
-	 src-table="ledger.transaction_entry"
-	 dst-table="ledger.account_transaction" reference-fk="fk_transaction_entry_belongs_to_account_transaction"
+<relationship name="rel_account_entry_transaction" type="relfk" layer="0"
+	 custom-color="#286658"
+	 src-table="ledger.account_entry"
+	 dst-table="ledger.transaction" reference-fk="fk_account_entry_belongs_to_transaction"
 	 src-required="false" dst-required="false"/>
 
-<relationship name="rel_external_transaction_external_account" type="relfk" layer="0"
-	 custom-color="#0e091c"
-	 src-table="reconciliation.external_transaction"
-	 dst-table="ledger.external_account" reference-fk="fk_external_transaction_belongs_to_external_account"
+<relationship name="rel_external_account_legal_entity" type="relfk" layer="0"
+	 custom-color="#d909df"
+	 src-table="reconciliation.external_account"
+	 dst-table="payment.legal_entity" reference-fk="fk_external_account_has_correspondent_legal_entity"
 	 src-required="false" dst-required="false"/>
 
-<relationship name="rel_reconciliation_transaction_entry" type="relfk" layer="0"
-	 custom-color="#1f988a"
+<relationship name="rel_external_account_account" type="relfk" layer="0"
+	 custom-color="#84f310"
+	 src-table="reconciliation.external_account"
+	 dst-table="ledger.account" reference-fk="fk_external_account_belongs_and_extends_account"
+	 src-required="false" dst-required="false"/>
+
+<relationship name="rel_external_account_entry_external_account" type="relfk" layer="0"
+	 custom-color="#5bfc04"
+	 src-table="reconciliation.external_account_entry"
+	 dst-table="reconciliation.external_account" reference-fk="fk_external_account_entry_belongs_to_external_account"
+	 src-required="false" dst-required="false"/>
+
+<relationship name="rel_reconciliation_external_account_entry" type="relfk" layer="0"
+	 custom-color="#e68232"
 	 src-table="reconciliation.reconciliation"
-	 dst-table="ledger.transaction_entry" reference-fk="fk_reconciliation_verifies_transaction_entry"
+	 dst-table="reconciliation.external_account_entry" reference-fk="fk_reconciliation_verifies_external_account_entry"
 	 src-required="false" dst-required="false"/>
 
-<relationship name="rel_reconciliation_external_transaction" type="relfk" layer="0"
-	 custom-color="#e06208"
+<relationship name="rel_reconciliation_account_entry" type="relfk" layer="0"
+	 custom-color="#a11eb4"
 	 src-table="reconciliation.reconciliation"
-	 dst-table="reconciliation.external_transaction" reference-fk="fk_reconciliation_verifies_external_transaction"
+	 dst-table="ledger.account_entry" reference-fk="fk_reconciliation_verifies_account_entry"
 	 src-required="false" dst-required="false"/>
 
 </dbmodel>
