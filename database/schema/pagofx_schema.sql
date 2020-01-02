@@ -20,13 +20,18 @@ CREATE TABLE reference.currency (
     currency_id uuid NOT NULL
         DEFAULT gen_random_uuid(),
     iso_code varchar(3) NOT NULL,
-    full_name varchar(50) NOT NULL,
+    unit_name varchar(50) NOT NULL,
+    fractional_unit_name varchar(50) NOT NULL,
     currency_symbol varchar(5) NOT NULL,
-    fractional_unit varchar(10) NOT NULL,
+    fractional_unit integer NOT NULL,
+    currency_timezone varchar(50) NOT NULL,
+    currency_utc_offset interval NOT NULL,
     CONSTRAINT pk_currency
         PRIMARY KEY (currency_id),
     CONSTRAINT uq_currency_iso_code
-        UNIQUE (iso_code)
+        UNIQUE (iso_code),
+    CONSTRAINT ch_fractional_unit_has_fixed_limit
+        CHECK (fractional_unit = ANY ('{0, -1, -2, -3}'::integer[]))
 );
 
 CREATE SCHEMA payment;
@@ -288,9 +293,10 @@ CREATE TABLE payment.base_currency (
         DEFAULT gen_random_uuid(),
     base_currency varchar(3),
     funding_method payment.funding_method_type NOT NULL,
-    lower_bound numeric(10, 2) NOT NULL,
-    upper_bound numeric(10, 2) NOT NULL,
+    lower_bound numeric(14, 3) NOT NULL,
+    upper_bound numeric(14, 3) NOT NULL,
     legal_entity_id uuid NOT NULL,
+    correspondent_id uuid NOT NULL,
     CONSTRAINT pk_base_currency
         PRIMARY KEY (base_currency_id),
     CONSTRAINT fk_base_currency_is_valid_currency
@@ -298,6 +304,9 @@ CREATE TABLE payment.base_currency (
         ON UPDATE RESTRICT ON DELETE RESTRICT,
     CONSTRAINT fk_base_currency_is_supported_by_legal_entity
         FOREIGN KEY (legal_entity_id) REFERENCES payment.legal_entity (legal_entity_id)
+        ON UPDATE RESTRICT ON DELETE RESTRICT,
+    CONSTRAINT fk_base_currency_has_correspondent_legal_entity
+        FOREIGN KEY (correspondent_id) REFERENCES payment.legal_entity (legal_entity_id)
         ON UPDATE RESTRICT ON DELETE RESTRICT
 );
 
@@ -309,10 +318,10 @@ CREATE TABLE payment.term_currency (
         DEFAULT gen_random_uuid(),
     term_currency varchar(3),
     payment_method payment.payment_method_type NOT NULL,
-    lower_bound numeric(10, 2) NOT NULL,
-    upper_bound numeric(10, 2) NOT NULL,
+    lower_bound numeric(14, 3) NOT NULL,
+    upper_bound numeric(14, 3) NOT NULL,
     legal_entity_id uuid NOT NULL,
-    correspondent_legal_entity_id uuid NOT NULL,
+    correspondent_id uuid NOT NULL,
     CONSTRAINT pk_term_currency
         PRIMARY KEY (term_currency_id),
     CONSTRAINT fk_term_currency_is_valid_currency
@@ -322,8 +331,7 @@ CREATE TABLE payment.term_currency (
         FOREIGN KEY (legal_entity_id) REFERENCES payment.legal_entity (legal_entity_id)
         ON UPDATE RESTRICT ON DELETE RESTRICT,
     CONSTRAINT fk_term_currency_has_correspondent_legal_entity
-        FOREIGN KEY (correspondent_legal_entity_id)
-        REFERENCES payment.legal_entity (legal_entity_id)
+        FOREIGN KEY (correspondent_id) REFERENCES payment.legal_entity (legal_entity_id)
         ON UPDATE RESTRICT ON DELETE RESTRICT
 );
 
@@ -331,11 +339,14 @@ CREATE TABLE payment.rate (
     rate_id uuid NOT NULL
         DEFAULT gen_random_uuid(),
     base_currency varchar(3) NOT NULL,
-    rate numeric(10, 4) NOT NULL,
+    rate numeric(17, 7) NOT NULL,
+    mid_market_rate numeric(17, 7) NOT NULL,
     term_currency varchar(3) NOT NULL,
     is_market_open boolean NOT NULL,
     rate_ts timestamptz NOT NULL
         DEFAULT date_trunc('milliseconds', current_timestamp),
+    expiration_ts timestamptz NOT NULL,
+    counterparty_id uuid NOT NULL,
     CONSTRAINT pk_rate
         PRIMARY KEY (rate_id),
     CONSTRAINT fk_rate_base_currency_is_valid_currency
@@ -345,21 +356,25 @@ CREATE TABLE payment.rate (
         FOREIGN KEY (term_currency) REFERENCES reference.currency (iso_code)
         ON UPDATE RESTRICT ON DELETE RESTRICT,
     CONSTRAINT uq_rate_base_currency_and_term_currency
-        UNIQUE (base_currency, term_currency)
+        UNIQUE (base_currency, term_currency),
+    CONSTRAINT fk_rate_has_counterparty_legal_entity
+        FOREIGN KEY (counterparty_id) REFERENCES payment.legal_entity (legal_entity_id)
+        ON UPDATE RESTRICT ON DELETE RESTRICT
 );
 
 CREATE TABLE payment.quote (
     quote_id uuid NOT NULL
         DEFAULT gen_random_uuid(),
-    base_amount numeric(10, 2) NOT NULL,
+    base_amount numeric(14, 3) NOT NULL,
     base_currency varchar(3) NOT NULL,
-    fixed_fee numeric(10, 2) NOT NULL,
+    fixed_fee numeric(14, 3) NOT NULL,
     variable_fee_percentage numeric(6, 4) NOT NULL,
-    rate numeric(10, 4) NOT NULL,
-    term_amount numeric(10, 2) NOT NULL,
+    rate numeric(17, 7) NOT NULL,
+    term_amount numeric(14, 3) NOT NULL,
     term_currency varchar(3) NOT NULL,
     creation_ts timestamptz NOT NULL
         DEFAULT date_trunc('milliseconds', current_timestamp),
+    expiration_ts timestamptz NOT NULL,
     customer_id uuid NOT NULL,
     CONSTRAINT pk_quote
         PRIMARY KEY (quote_id),
@@ -442,32 +457,17 @@ ADD CONSTRAINT fk_payment_is_in_last_payment_status
     REFERENCES payment.payment_status (payment_status_id)
     ON UPDATE RESTRICT ON DELETE RESTRICT;
 
-CREATE TABLE payment.funding_authorization (
-    funding_authorization_id uuid NOT NULL
+CREATE TABLE payment.payment_funding (
+    payment_funding_id uuid NOT NULL
         DEFAULT gen_random_uuid(),
     payment_status payment.payment_status_type NOT NULL,
-    funding_authorization_details jsonb NOT NULL,
-    funding_authorization_ts timestamptz NOT NULL
+    payment_funding_details jsonb NOT NULL,
+    payment_funding_ts timestamptz NOT NULL
         DEFAULT date_trunc('milliseconds', current_timestamp),
     payment_id uuid NOT NULL,
-    CONSTRAINT pk_funding_authorization
-        PRIMARY KEY (funding_authorization_id),
-    CONSTRAINT fk_funding_authorization_belongs_to_payment
-        FOREIGN KEY (payment_id) REFERENCES payment.payment (payment_id)
-        ON UPDATE RESTRICT ON DELETE RESTRICT
-);
-
-CREATE TABLE payment.funding_capture (
-    funding_capture_id uuid NOT NULL
-        DEFAULT gen_random_uuid(),
-    payment_status payment.payment_status_type NOT NULL,
-    funding_capture_details jsonb NOT NULL,
-    funding_capture_ts timestamptz NOT NULL
-        DEFAULT date_trunc('milliseconds', current_timestamp),
-    payment_id uuid NOT NULL,
-    CONSTRAINT pk_funding_capture
-        PRIMARY KEY (funding_capture_id),
-    CONSTRAINT fk_funding_capture_belongs_to_payment
+    CONSTRAINT pk_payment_funding
+        PRIMARY KEY (payment_funding_id),
+    CONSTRAINT fk_payment_funding_belongs_to_payment
         FOREIGN KEY (payment_id) REFERENCES payment.payment (payment_id)
         ON UPDATE RESTRICT ON DELETE RESTRICT
 );
@@ -475,17 +475,18 @@ CREATE TABLE payment.funding_capture (
 CREATE TABLE payment.payment_fx (
     payment_fx_id uuid NOT NULL
         DEFAULT gen_random_uuid(),
-    sell_amount numeric(10, 2) NOT NULL,
+    sell_amount numeric(14, 3) NOT NULL,
     sell_currency varchar(3) NOT NULL,
-    mid_market_rate numeric(10, 4) NOT NULL,
-    rate numeric(10, 4) NOT NULL,
-    buy_amount numeric(10, 2) NOT NULL,
+    sell_ts timestamptz NOT NULL,
+    mid_market_rate numeric(17, 7) NOT NULL,
+    rate numeric(17, 7) NOT NULL,
+    buy_amount numeric(14, 3) NOT NULL,
     buy_currency varchar(3) NOT NULL,
+    buy_ts timestamptz NOT NULL,
     fx_reference varchar(50) NOT NULL,
     payment_status payment.payment_status_type NOT NULL,
-    fx_trading_ts timestamptz NOT NULL
-        DEFAULT date_trunc('milliseconds', current_timestamp),
     payment_id uuid NOT NULL,
+    counterparty_id uuid NOT NULL,
     CONSTRAINT pk_payment_fx
         PRIMARY KEY (payment_fx_id),
     CONSTRAINT fk_payment_fx_sell_currency_is_valid_currency
@@ -496,30 +497,33 @@ CREATE TABLE payment.payment_fx (
         ON UPDATE RESTRICT ON DELETE RESTRICT,
     CONSTRAINT fk_payment_fx_belongs_to_payment
         FOREIGN KEY (payment_id) REFERENCES payment.payment (payment_id)
+        ON UPDATE RESTRICT ON DELETE RESTRICT,
+    CONSTRAINT fk_payment_fx_has_counterparty_legal_entity
+        FOREIGN KEY (counterparty_id) REFERENCES payment.legal_entity (legal_entity_id)
         ON UPDATE RESTRICT ON DELETE RESTRICT
 );
 
-CREATE TABLE payment.payment_settlement (
-    payment_settlement_id uuid NOT NULL
+CREATE TABLE payment.payment_fulfillment (
+    payment_fulfillment_id uuid NOT NULL
         DEFAULT gen_random_uuid(),
     payment_status payment.payment_status_type NOT NULL,
-    payment_provider_id uuid NOT NULL,
-    payment_provider_reference varchar(50) NOT NULL,
-    payment_settlement_details jsonb NOT NULL,
-    payment_settlement_ts timestamptz NOT NULL
+    payment_fulfillment_details jsonb NOT NULL,
+    payment_fulfillment_ts timestamptz NOT NULL
         DEFAULT date_trunc('milliseconds', current_timestamp),
     payment_id uuid NOT NULL,
-    CONSTRAINT pk_payment_settlement
-        PRIMARY KEY (payment_settlement_id),
-    CONSTRAINT fk_payment_settlement_belongs_to_payment
+    correspondent_id uuid NOT NULL,
+    correspondent_reference varchar(50) NOT NULL,
+    CONSTRAINT pk_payment_fulfillment
+        PRIMARY KEY (payment_fulfillment_id),
+    CONSTRAINT fk_payment_fulfillment_belongs_to_payment
         FOREIGN KEY (payment_id) REFERENCES payment.payment (payment_id)
         ON UPDATE RESTRICT ON DELETE RESTRICT,
-    CONSTRAINT fk_payment_settlement_provider_is_legal_entity
-        FOREIGN KEY (payment_provider_id)
+    CONSTRAINT fk_payment_fulfillment_has_correspondent_legal_entity
+        FOREIGN KEY (correspondent_id)
         REFERENCES payment.legal_entity (legal_entity_id)
         ON UPDATE RESTRICT ON DELETE RESTRICT,
-    CONSTRAINT uq_payment_provider_and_payment_provider_reference
-        UNIQUE (payment_provider_id, payment_provider_reference)
+    CONSTRAINT uq_correspondent_and_correspondent_reference
+        UNIQUE (correspondent_id, correspondent_reference)
 );
 
 CREATE TYPE payment.payment_check_status_type AS
@@ -603,51 +607,35 @@ CREATE TABLE ledger.account (
         DEFAULT gen_random_uuid(),
     account_type ledger.account_type NOT NULL,
     currency varchar(3) NOT NULL,
+    accounting_code varchar(50) NOT NULL,
     creation_ts timestamptz NOT NULL
         DEFAULT date_trunc('milliseconds', current_timestamp),
-    account_owner_id uuid NOT NULL,
+    owner_id uuid NOT NULL,
+    correspondent_id uuid,
     CONSTRAINT pk_account
         PRIMARY KEY (account_id),
     CONSTRAINT fk_account_currency_is_valid_currency
         FOREIGN KEY (currency) REFERENCES reference.currency (iso_code)
         ON UPDATE RESTRICT ON DELETE RESTRICT,
-    CONSTRAINT fk_account_owner_is_legal_entity
-        FOREIGN KEY (account_owner_id) REFERENCES payment.legal_entity (legal_entity_id)
-        ON UPDATE RESTRICT ON DELETE RESTRICT
-);
-
-CREATE TABLE ledger.external_account (
-    external_account_id uuid NOT NULL
-        DEFAULT gen_random_uuid(),
-    account_number varchar(50) NOT NULL,
-    accounting_code varchar(50) NOT NULL,
-    suplementary_reference varchar(50) NOT NULL,
-    creation_ts timestamptz NOT NULL
-        DEFAULT date_trunc('milliseconds', current_timestamp),
-    account_id uuid NOT NULL,
-    account_correspondent_id uuid NOT NULL,
-    CONSTRAINT pk_external_account
-        PRIMARY KEY (external_account_id),
-    CONSTRAINT fk_external_account_belongs_and_extends_account
-        FOREIGN KEY (account_id) REFERENCES ledger.account (account_id)
+    CONSTRAINT fk_account_has_owner_legal_entity
+        FOREIGN KEY (owner_id) REFERENCES payment.legal_entity (legal_entity_id)
         ON UPDATE RESTRICT ON DELETE RESTRICT,
-    CONSTRAINT fk_external_account_correspondent_is_legal_entity
-        FOREIGN KEY (account_correspondent_id)
-        REFERENCES payment.legal_entity (legal_entity_id)
+    CONSTRAINT fk_account_has_correspondent_legal_entity
+        FOREIGN KEY (correspondent_id) REFERENCES payment.legal_entity (legal_entity_id)
         ON UPDATE RESTRICT ON DELETE RESTRICT
 );
 
 CREATE TABLE ledger.account_balance (
     account_balance_id uuid NOT NULL
         DEFAULT gen_random_uuid(),
-    balance_date date NOT NULL
-        DEFAULT date_trunc('days', current_timestamp),
-    opening_balance numeric(10, 2) NOT NULL,
+    opening_balance numeric(14, 3) NOT NULL,
     credit_count integer NOT NULL,
-    credit_amount numeric(10, 2) NOT NULL,
+    credit_amount numeric(14, 3) NOT NULL,
     debit_count integer NOT NULL,
-    debit_amount numeric(10, 2) NOT NULL,
-    closing_balance numeric(10, 2) NOT NULL,
+    debit_amount numeric(14, 3) NOT NULL,
+    closing_balance numeric(14, 3) NOT NULL,
+    balance_ts timestamptz NOT NULL
+        DEFAULT date_trunc('milliseconds', current_timestamp),
     account_id uuid NOT NULL,
     CONSTRAINT pk_account_balance
         PRIMARY KEY (account_balance_id),
@@ -656,77 +644,95 @@ CREATE TABLE ledger.account_balance (
         ON UPDATE RESTRICT ON DELETE RESTRICT
 );
 
-CREATE TABLE ledger.account_transaction (
-    account_transaction_id uuid NOT NULL
+CREATE TABLE ledger.transaction (
+    transaction_id uuid NOT NULL
         DEFAULT gen_random_uuid(),
-    subject varchar(50) NOT NULL,
+    executor varchar(50) NOT NULL,
     currency varchar(3) NOT NULL,
     transaction_ts timestamptz NOT NULL
         DEFAULT date_trunc('milliseconds', current_timestamp),
-    payment_id uuid NOT NULL,
-    CONSTRAINT pk_account_transaction
-        PRIMARY KEY (account_transaction_id),
-    CONSTRAINT fk_account_transaction_currency_is_valid_currency
+    payment_id uuid,
+    CONSTRAINT pk_transaction
+        PRIMARY KEY (transaction_id),
+    CONSTRAINT fk_transaction_currency_is_valid_currency
         FOREIGN KEY (currency) REFERENCES reference.currency (iso_code)
         ON UPDATE RESTRICT ON DELETE RESTRICT,
-    CONSTRAINT fk_account_transaction_belongs_to_payment
+    CONSTRAINT fk_transaction_belongs_to_payment
         FOREIGN KEY (payment_id) REFERENCES payment.payment (payment_id)
         ON UPDATE RESTRICT ON DELETE RESTRICT
 );
 
-CREATE TABLE ledger.transaction_entry (
-    transaction_entry_id uuid NOT NULL
+CREATE TABLE ledger.account_entry (
+    account_entry_id uuid NOT NULL
         DEFAULT gen_random_uuid(),
-    entry_amount numeric(10, 2) NOT NULL,
+    entry_amount numeric(14, 3) NOT NULL,
     entry_reference varchar(50),
     account_id uuid NOT NULL,
-    account_transaction_id uuid NOT NULL,
-    CONSTRAINT pk_transaction_entry
-        PRIMARY KEY (transaction_entry_id),
-    CONSTRAINT fk_transaction_entry_belongs_to_account
+    transaction_id uuid NOT NULL,
+    CONSTRAINT pk_account_entry
+        PRIMARY KEY (account_entry_id),
+    CONSTRAINT fk_account_entry_belongs_to_account
         FOREIGN KEY (account_id) REFERENCES ledger.account (account_id)
         ON UPDATE RESTRICT ON DELETE RESTRICT,
-    CONSTRAINT fk_transaction_entry_belongs_to_account_transaction
-        FOREIGN KEY (account_transaction_id)
-        REFERENCES ledger.account_transaction (account_transaction_id)
+    CONSTRAINT fk_account_entry_belongs_to_transaction
+        FOREIGN KEY (transaction_id) REFERENCES ledger.transaction (transaction_id)
         ON UPDATE RESTRICT ON DELETE RESTRICT
 );
 
 CREATE SCHEMA reconciliation;
 
-CREATE TABLE reconciliation.external_transaction (
-    external_transaction_id uuid NOT NULL
+CREATE TABLE reconciliation.external_account (
+    external_account_id uuid NOT NULL
         DEFAULT gen_random_uuid(),
-    transaction_amount numeric(10, 2) NOT NULL,
-    transaction_reference varchar(50) NOT NULL,
-    transaction_details jsonb NOT NULL,
-    transaction_ts timestamptz NOT NULL,
+    account_number varchar(50) NOT NULL,
+    suplementary_reference varchar(50) NOT NULL,
+    creation_ts timestamptz NOT NULL
+        DEFAULT date_trunc('milliseconds', current_timestamp),
+    correspondent_id uuid NOT NULL,
+    account_id uuid NOT NULL,
+    CONSTRAINT pk_external_account
+        PRIMARY KEY (external_account_id),
+    CONSTRAINT fk_external_account_has_correspondent_legal_entity
+        FOREIGN KEY (correspondent_id) REFERENCES payment.legal_entity (legal_entity_id)
+        ON UPDATE RESTRICT ON DELETE RESTRICT,
+    CONSTRAINT fk_external_account_belongs_and_extends_account
+        FOREIGN KEY (account_id) REFERENCES ledger.account (account_id)
+        ON UPDATE RESTRICT ON DELETE RESTRICT
+);
+
+CREATE TABLE reconciliation.external_account_entry (
+    external_account_entry_id uuid NOT NULL
+        DEFAULT gen_random_uuid(),
+    entry_amount numeric(14, 3) NOT NULL,
+    entry_reference varchar(50) NOT NULL,
+    entry_details jsonb NOT NULL,
+    entry_ts timestamptz NOT NULL,
     external_account_id uuid NOT NULL,
-    CONSTRAINT pk_external_transaction
-        PRIMARY KEY (external_transaction_id),
-    CONSTRAINT fk_external_transaction_belongs_to_external_account
+    CONSTRAINT pk_external_account_entry
+        PRIMARY KEY (external_account_entry_id),
+    CONSTRAINT fk_external_account_entry_belongs_to_external_account
         FOREIGN KEY (external_account_id)
-        REFERENCES ledger.external_account (external_account_id)
+        REFERENCES reconciliation.external_account (external_account_id)
         ON UPDATE RESTRICT ON DELETE RESTRICT
 );
 
 CREATE TABLE reconciliation.reconciliation (
     reconciliation_id uuid NOT NULL
         DEFAULT gen_random_uuid(),
-    subject varchar(50) NOT NULL,
+    executor varchar(50) NOT NULL,
     reconciliation_details jsonb,
     reconciliation_ts timestamptz NOT NULL
         DEFAULT date_trunc('milliseconds', current_timestamp),
-    transaction_entry_id uuid NOT NULL,
-    external_transaction_id uuid NOT NULL,
+    external_account_entry_id uuid NOT NULL,
+    account_entry_id uuid NOT NULL,
     CONSTRAINT pk_reconciliation
         PRIMARY KEY (reconciliation_id),
-    CONSTRAINT fk_reconciliation_verifies_transaction_entry
-        FOREIGN KEY (transaction_entry_id)
-        REFERENCES ledger.transaction_entry (transaction_entry_id)
+    CONSTRAINT fk_reconciliation_verifies_external_account_entry
+        FOREIGN KEY (external_account_entry_id)
+        REFERENCES reconciliation.external_account_entry (external_account_entry_id)
         ON UPDATE RESTRICT ON DELETE RESTRICT,
-    CONSTRAINT fk_reconciliation_verifies_external_transaction
-        FOREIGN KEY (external_transaction_id)
-        REFERENCES reconciliation.external_transaction (external_transaction_id)
+    CONSTRAINT fk_reconciliation_verifies_account_entry
+        FOREIGN KEY (account_entry_id)
+        REFERENCES ledger.account_entry (account_entry_id)
         ON UPDATE RESTRICT ON DELETE RESTRICT
 );
