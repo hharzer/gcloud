@@ -1,0 +1,16 @@
+extends ../layout
+
+block content
+    h1 Log in
+    if error
+        p= error
+    form(method="POST" action="/login")
+        input(type="hidden" name="challenge" value=challenge)
+        input.email(type="email" name="email" placeholder="Email")
+        br
+        input.password(type="password" name="password" placeholder="Password")
+        br
+        input.remember(type="checkbox" name="remember")
+        label(for="remember") Remember me
+        br
+        input.accept(type="submit" value="Log in")

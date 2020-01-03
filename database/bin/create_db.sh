@@ -22,12 +22,12 @@ psql -c "${SQL_CREATE_DB}" -v ON_ERROR_STOP=1 -v ECHO=queries
 
 export PGDATABASE=identity
 
-# psql -f $DB_DIR/identity_schema.sql -v ON_ERROR_STOP=1 -v ECHO=queries
+psql -f $DB_DIR/identity_schema.sql -v ON_ERROR_STOP=1 -v ECHO=queries
 # psql -f $DB_DIR/oauth_schema.sql -v ON_ERROR_STOP=1 -v ECHO=queries
-psql -f $DB_DIR/pagofx_schema.sql -v ON_ERROR_STOP=1 -v ECHO=queries
+# psql -f $DB_DIR/pagofx_schema.sql -v ON_ERROR_STOP=1 -v ECHO=queries
 
-# # Grant access to database
-# SQL_DROP_ROLE="DROP ROLE IF EXISTS identity_api, identity_api_role;"
+# Grant access to database
+SQL_DROP_ROLE="DROP ROLE IF EXISTS identity_api, identity_api_role;"
 
-# psql -c "${SQL_DROP_ROLE}" -v ON_ERROR_STOP=1 -v ECHO=queries
-# psql -f $DB_DIR/identity_access.sql -v ON_ERROR_STOP=1 -v ECHO=queries
+psql -c "${SQL_DROP_ROLE}" -v ON_ERROR_STOP=1 -v ECHO=queries
+psql -f $DB_DIR/identity_access.sql -v ON_ERROR_STOP=1 -v ECHO=queries

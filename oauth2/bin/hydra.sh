@@ -11,7 +11,7 @@ export SECRETS_SYSTEM='OryHydraSecretsSystem'
 
 # Token configuration
 export TTL_AUTH_CODE=1m
-export TTL_ACCESS_TOKEN=1m
+export TTL_ACCESS_TOKEN=1h
 export TTL_REFRESH_TOKEN=2m
 export TTL_ID_TOKEN=1m
 

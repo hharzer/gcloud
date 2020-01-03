@@ -24,7 +24,6 @@ const executeRequest = (req, res, next) => {
 
 const formatResponse = (req, res, next) => {
     const {oauth2AuthCodeUri} = req.request;
-    console.log(oauth2AuthCodeUri);
     res.redirect(302, oauth2AuthCodeUri, next);
 };
 
