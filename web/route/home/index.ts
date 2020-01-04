@@ -1,5 +1,5 @@
 const executeRequest = async (req, res, next) => {
-    const title = "Welcome home";
+    const title = "Web - Home";
     const userPath = "/users";
     const loginPath = "/login";
     const response = {title, userPath, loginPath};

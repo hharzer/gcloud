@@ -12,9 +12,8 @@ const executeRequest = async (req, res, next) => {
     try {
         const users = await getUserWithOauth2Token();
         const title = "Users";
-        const homePath = "/";
         const userPath = "/users";
-        const response = {title, homePath, userPath, users};
+        const response = {title, userPath, users};
         res.response = response;
         next();
     } catch (error) {

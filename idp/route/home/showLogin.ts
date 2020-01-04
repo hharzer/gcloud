@@ -23,15 +23,20 @@ const validateRequest = (req, res, next) => {
 const executeRequest = async (req, res, next) => {
     try {
         const {loginChallenge} = req.request;
-        const {challenge, skip, subject}: any = await getLoginRequest(loginChallenge);
+        const loginRequest: any = await getLoginRequest(loginChallenge);
+        const {challenge, skip, subject} = loginRequest;
         if (skip) {
             const login = {subject};
-            const {redirect_to}: any = await acceptLoginRequest(challenge, login);
-            const response = {redirectTo: redirect_to};
+            const {redirect_to: redirectTo}: any = await acceptLoginRequest(
+                challenge,
+                login
+            );
+            const response = {redirectTo};
             res.response = response;
         } else {
             const showLogin = true;
-            const response = {challenge, showLogin};
+            const login = {title: "IdP - Log in", challenge};
+            const response = {showLogin, ...login};
             res.response = response;
         }
         next();

@@ -1,0 +1,19 @@
+extends ../layout
+
+block content
+    h1 Consent
+    p Hello, #{subject}!
+    p.
+        #[strong #{clientName}] (#{clientId}) requests access to
+        #[strong #{requestedAudience}] API within the scope
+    form(method="POST" action="/consent")
+        input(type="hidden" name="challenge" value=challenge)
+        each scope in requestedScope
+            input(type="checkbox" id=scope name="grantedScope" value=scope checked)
+            label(for=scope) #{scope}
+            br
+        input#remember(type="checkbox" name="remember")
+        label(for="remember") Remember my decision
+        br
+        input#allow(type="submit" name="grant" value="Allow")
+        input#deny(type="submit" name="grant" value="Deny")

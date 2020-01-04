@@ -7,6 +7,7 @@
     "client_id": "ac-client",
     "client_secret": "AuthorizationCodeSecret",
     "token_endpoint_auth_method": "client_secret_basic",
+    "audience": ["identity"],
     "scope": "offline_access openid custom1 custom2",
     "grant_types": ["authorization_code", "refresh_token"],
     "response_types": ["code", "token", "id_token"],

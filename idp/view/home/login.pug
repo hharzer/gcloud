@@ -6,11 +6,12 @@ block content
         p= error
     form(method="POST" action="/login")
         input(type="hidden" name="challenge" value=challenge)
-        input.email(type="email" name="email" placeholder="Email")
+        input#email(type="email" name="email" placeholder="Email")
         br
-        input.password(type="password" name="password" placeholder="Password")
+        input#password(type="password" name="password" placeholder="Password")
         br
-        input.remember(type="checkbox" name="remember")
+        input#remember(type="checkbox" name="remember")
         label(for="remember") Remember me
         br
-        input.accept(type="submit" value="Log in")
+        input#login(type="submit" name="auth" value="Log in")
+        input#regret(type="submit" name="auth" value="Regret")

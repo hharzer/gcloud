@@ -24,3 +24,35 @@ export const acceptLoginRequest = async (challenge, body) => {
     const response = await authAdmin.put(oauth2AcceptLoginPath, options).json();
     return response;
 };
+
+export const rejectLoginRequest = async (challenge, body) => {
+    const oauth2RejectLoginPath = `${process.env.OAUTH2_REQUEST_PATH}/login/reject`;
+    const searchParams = {login_challenge: challenge};
+    const options = {searchParams, json: body};
+    const response = await authAdmin.put(oauth2RejectLoginPath, options).json();
+    return response;
+};
+
+export const getConsentRequest = async (challenge) => {
+    const oauth2RequestConsentPath = `${process.env.OAUTH2_REQUEST_PATH}/consent`;
+    const searchParams = {consent_challenge: challenge};
+    const options = {searchParams};
+    const response = await authAdmin.get(oauth2RequestConsentPath, options).json();
+    return response;
+};
+
+export const acceptConsentRequest = async (challenge, body) => {
+    const oauth2AcceptConsentPath = `${process.env.OAUTH2_REQUEST_PATH}/consent/accept`;
+    const searchParams = {consent_challenge: challenge};
+    const options = {searchParams, json: body};
+    const response = await authAdmin.put(oauth2AcceptConsentPath, options).json();
+    return response;
+};
+
+export const rejectConsentRequest = async (challenge, body) => {
+    const oauth2RejectConsentPath = `${process.env.OAUTH2_REQUEST_PATH}/consent/reject`;
+    const searchParams = {consent_challenge: challenge};
+    const options = {searchParams, json: body};
+    const response = await authAdmin.put(oauth2RejectConsentPath, options).json();
+    return response;
+};
