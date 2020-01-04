@@ -19,6 +19,7 @@
 ## OAuth 2.0 and OpenId Connect identity and access management (:4444, :4445)
 
 - Hyrda /keys: JWK (key/cert pair) for TLS (HTTPS), JWT (id_token)
+- Verify id_token with Hydra public key
 
 ## Identity provider (:4000)
 

@@ -70,7 +70,12 @@ const createRestifyError = (httpError) => {
     }
 };
 
-export const withOauth2Token = (clientId, clientSecret, scope, callApi) => {
+export const withOauth2ClientCredentialsToken = (
+    clientId,
+    clientSecret,
+    scope,
+    callApi
+) => {
     let token: any = null;
     return async (...args) => {
         let retryCount = 0;
@@ -100,4 +105,35 @@ export const withOauth2Token = (clientId, clientSecret, scope, callApi) => {
             ++retryCount;
         }
     };
+};
+
+// curl -sSLk -X POST "https://localhost:4444/oauth2/token" \
+//     -u 'ac-client':'AuthorizationCodeSecret' \
+//     -H 'Content-Type: application/x-www-form-urlencoded' \
+//     -d "grant_type=authorization_code&code=$CODE"\
+// "&scope=offline_access openid custom1 custom2"\
+// "&redirect_uri=http://localhost:4002/callback"\
+//     | jq .
+
+export const getOauth2AuthorizationCodeToken = async (
+    clientId,
+    clientSecret,
+    authCode,
+    scope,
+    redirectUri
+) => {
+    const oauth2TokenPath = process.env.OAUTH2_TOKEN_PATH ?? "UNDEFINED";
+    const contentType = "application/x-www-form-urlencoded";
+    const clientCredentials = Buffer.from(`${clientId}:${clientSecret}`).toString(
+        "base64"
+    );
+    const authorization = `Basic ${clientCredentials}`;
+    // prettier-ignore
+    const headers = {"Content-Type": contentType, "Authorization": authorization};
+    const body =
+        `grant_type=authorization_code&code=${authCode}` +
+        `&scope=${scope}&redirect_uri=${redirectUri}`;
+    const options = {headers, body};
+    const response = await auth.post(oauth2TokenPath, options).json();
+    return response;
 };

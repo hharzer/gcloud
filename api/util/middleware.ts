@@ -1,5 +1,5 @@
 import {UnauthorizedError, ForbiddenError} from "restify-errors";
-import {introspectOAuth2Token} from "util/oauth2";
+import {introspectOauth2Token} from "util/oauth2";
 import {databasePool} from "util/database";
 
 export const verifyOauth2Token = (...paths) => {
@@ -15,7 +15,7 @@ export const verifyOauth2Token = (...paths) => {
                     throw new UnauthorizedError("Missing access token");
                 }
                 const accessToken = match[1];
-                const token: any = await introspectOAuth2Token(accessToken, "");
+                const token: any = await introspectOauth2Token(accessToken, "");
                 if (!token.active) {
                     throw new ForbiddenError("Expired or invalid access token");
                 }

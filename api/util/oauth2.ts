@@ -20,7 +20,7 @@ const authAdmin = (() => {
 //     -d "token=$TOKEN&scope=custom1 custom2" \
 //     | jq .
 
-export const introspectOAuth2Token = async (oauth2Token, scope) => {
+export const introspectOauth2Token = async (oauth2Token, scope) => {
     const oauth2IntrospectPath = process.env.OAUTH2_INTROSPECT_PATH ?? "UNDEFINED";
     const contentType = "application/x-www-form-urlencoded";
     const headers = {"Content-Type": contentType};

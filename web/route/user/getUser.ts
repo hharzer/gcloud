@@ -1,7 +1,7 @@
-import {withOauth2Token} from "util/oauth2";
+import {withOauth2ClientCredentialsToken} from "util/oauth2";
 import {getUser} from "route/user/util/api";
 
-const getUserWithOauth2Token = withOauth2Token(
+const getUserWithOauth2Token = withOauth2ClientCredentialsToken(
     process.env.OAUTH2_CC_CLIENT_ID,
     process.env.OAUTH2_CC_CLIENT_SECRET,
     "custom1 custom2",
