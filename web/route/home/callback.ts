@@ -1,5 +1,8 @@
-import {getOauth2AuthorizationCodeToken} from "util/oauth2";
+import * as moment from "moment";
 import * as jwt from "jsonwebtoken";
+import {getOauth2AuthorizationCodeToken} from "util/oauth2";
+import {putSession} from "util/session";
+import {setCookie} from "util/cookie";
 
 const parseRequest = (req, res, next) => {
     const authCode = req.query.code;
@@ -20,16 +23,38 @@ const executeRequest = async (req, res, next) => {
             const response = {redirectTo: errorUri};
             res.response = response;
         } else {
-            const token: any = await getOauth2AuthorizationCodeToken(
+            const {
+                access_token: accessToken,
+                expires_in: expiresIn,
+                id_token: jwtIdToken,
+                refresh_token: refreshToken,
+                scope: grantedScope,
+            }: any = await getOauth2AuthorizationCodeToken(
                 process.env.OAUTH2_AC_CLIENT_ID,
                 process.env.OAUTH2_AC_CLIENT_SECRET,
                 authCode,
                 scope,
                 process.env.OAUTH2_AC_CLIENT_REDIRECT_URI
             );
-            console.log(token);
-            const idToken = jwt.decode(token.id_token);
-            console.log(idToken);
+            const {sid: sessionId, sub: subject}: any = jwt.decode(jwtIdToken);
+            const expiresAt = moment()
+                .add(expiresIn)
+                .subtract(5, "seconds");
+            const session = {
+                sessionId,
+                subject,
+                accessToken,
+                expiresAt,
+                refreshToken,
+                scope: grantedScope,
+            };
+            putSession(sessionId, session);
+            const attributes = {
+                path: "/",
+                expires: moment().add(5, "minute"),
+                httpOnly: true,
+            };
+            setCookie(res, {webSessionId: sessionId}, attributes);
             const response = {redirectTo: "/"};
             res.response = response;
         }

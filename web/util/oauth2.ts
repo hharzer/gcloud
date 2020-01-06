@@ -137,3 +137,16 @@ export const getOauth2AuthorizationCodeToken = async (
     const response = await auth.post(oauth2TokenPath, options).json();
     return response;
 };
+
+// curl -sSLk -X GET "https://localhost:4444/userinfo" \
+//     -H "Authorization: Bearer $TOKEN" \
+//     | jq .
+
+export const getOauth2UserInfo = async (accessToken) => {
+    const oauth2UserInfoPath = process.env.OAUTH2_USERINFO_PATH ?? "UNDEFINED";
+    const authorization = `Bearer ${accessToken}`;
+    const headers = {Authorization: authorization};
+    const options = {headers};
+    const response = await auth.get(oauth2UserInfoPath, options).json();
+    return response;
+};

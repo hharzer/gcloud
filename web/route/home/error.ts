@@ -7,7 +7,7 @@ const parseRequest = (req, res, next) => {
 };
 
 const formatResponse = (req, res, next) => {
-    res.setHeader("Content-Type", "text/html");
+    res.header("Content-Type", "text/html");
     res.send({template: "home/error", locals: req.request});
 };
 

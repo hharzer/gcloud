@@ -27,6 +27,6 @@ export URLS_POST_LOGOUT_REDIRECT=http://localhost:4000/post-logout
 hydra serve all # (public + admin)
 
 # https://localhost:4444 -> public interface
-#     /auth, /token, /revoke, /userinfo, /.well-known
+#     /auth, /token, /userinfo, /revoke, /.well-known
 # https://localhost:4445 -> admin interface
 #     /keys, /clients, /introspect, /requests, /sessions

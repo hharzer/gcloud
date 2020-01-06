@@ -34,7 +34,6 @@ const executeRequest = async (req, res, next) => {
         const {client_name: clientName, client_id: clientId} = consentRequest.client;
         if (skip) {
             const consent = {
-                challenge,
                 grant_access_token_audience: requestedAudience,
                 grant_scope: requestedScope,
             };
@@ -67,7 +66,7 @@ const executeRequest = async (req, res, next) => {
 const formatResponse = (req, res, next) => {
     const {showConsent, redirectTo} = res.response;
     if (showConsent) {
-        res.setHeader("Content-Type", "text/html");
+        res.header("Content-Type", "text/html");
         res.send({template: "home/consent", locals: res.response});
         next();
     } else {

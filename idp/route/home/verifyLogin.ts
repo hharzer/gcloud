@@ -58,7 +58,7 @@ const executeRequest = async (req, res, next) => {
         next();
     } catch (error) {
         const response = {challenge, error: error.message};
-        res.setHeader("Content-Type", "text/html");
+        res.header("Content-Type", "text/html");
         res.send({template: "home/login", locals: response});
         next(false);
     }

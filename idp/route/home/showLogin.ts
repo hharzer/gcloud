@@ -48,7 +48,7 @@ const executeRequest = async (req, res, next) => {
 const formatResponse = (req, res, next) => {
     const {showLogin, redirectTo} = res.response;
     if (showLogin) {
-        res.setHeader("Content-Type", "text/html");
+        res.header("Content-Type", "text/html");
         res.send({template: "home/login", locals: res.response});
         next();
     } else {

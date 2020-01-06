@@ -23,7 +23,7 @@ const executeRequest = async (req, res, next) => {
 
 const formatResponse = (req, res, next) => {
     const response = res.response;
-    res.setHeader("Content-Type", "text/html");
+    res.header("Content-Type", "text/html");
     res.send({template: "user/getUser", locals: response});
     next();
 };
