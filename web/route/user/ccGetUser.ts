@@ -1,7 +1,7 @@
 import {withOauth2ClientCredentialsToken} from "util/oauth2";
 import {getUser} from "route/user/util/api";
 
-const getUserWithOauth2Token = withOauth2ClientCredentialsToken(
+const getUserWithOauth2ClientCredentialsToken = withOauth2ClientCredentialsToken(
     process.env.OAUTH2_CC_CLIENT_ID,
     process.env.OAUTH2_CC_CLIENT_SECRET,
     "custom1 custom2",
@@ -10,9 +10,9 @@ const getUserWithOauth2Token = withOauth2ClientCredentialsToken(
 
 const executeRequest = async (req, res, next) => {
     try {
-        const users = await getUserWithOauth2Token();
-        const title = "Users";
-        const userPath = "/users";
+        const users = await getUserWithOauth2ClientCredentialsToken();
+        const title = "CC - Users";
+        const userPath = "/cc/users";
         const response = {title, userPath, users};
         res.response = response;
         next();
@@ -29,5 +29,5 @@ const formatResponse = (req, res, next) => {
 };
 
 export const addRoute = (server, route) => {
-    server.get(route, executeRequest, formatResponse);
+    server.get(`/cc${route}`, executeRequest, formatResponse);
 };

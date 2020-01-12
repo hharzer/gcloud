@@ -10,10 +10,10 @@ export DSN='postgres://hydra:Password1!@localhost:5432/hydra?sslmode=disable'
 export SECRETS_SYSTEM='OryHydraSecretsSystem'
 
 # Token configuration
-export TTL_AUTH_CODE=1h
-export TTL_ACCESS_TOKEN=1h
-export TTL_REFRESH_TOKEN=2h
-export TTL_ID_TOKEN=1h
+export TTL_AUTH_CODE=1m
+export TTL_ACCESS_TOKEN=30s
+export TTL_REFRESH_TOKEN=1m
+export TTL_ID_TOKEN=1m
 
 # IdP configuration
 export URLS_SELF_ISSUER=https://localhost:4444/

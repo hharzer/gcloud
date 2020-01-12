@@ -6,6 +6,8 @@ import {
     ForbiddenError,
     InternalServerError,
 } from "restify-errors";
+import * as jwt from "jsonwebtoken";
+import {putSession} from "util/session";
 
 const MAX_RETRY = 2;
 
@@ -17,31 +19,6 @@ const auth = (() => {
     const authClient = got.extend(options);
     return authClient;
 })();
-
-// curl -sSLk -X POST "https://localhost:4444/oauth2/token" \
-//     -u 'cc-client':'ClientCredentialsSecret' \
-//     -H 'Content-Type: application/x-www-form-urlencoded' \
-//     -d 'grant_type=client_credentials&scope=custom1 custom2' \
-//     | jq .
-
-export const getOauth2ClientCredentialsToken = async (
-    clientId,
-    clientSecret,
-    scope
-) => {
-    const oauth2TokenPath = process.env.OAUTH2_TOKEN_PATH ?? "UNDEFINED";
-    const contentType = "application/x-www-form-urlencoded";
-    const clientCredentials = Buffer.from(`${clientId}:${clientSecret}`).toString(
-        "base64"
-    );
-    const authorization = `Basic ${clientCredentials}`;
-    // prettier-ignore
-    const headers = {"Content-Type": contentType, "Authorization": authorization};
-    const body = `grant_type=client_credentials&scope=${scope}`;
-    const options = {headers, body};
-    const response = await auth.post(oauth2TokenPath, options).json();
-    return response;
-};
 
 const parseHttpError = (error) => {
     const statusCode = error?.response?.statusCode ?? 500;
@@ -70,6 +47,31 @@ const createRestifyError = (httpError) => {
     }
 };
 
+// curl -sSLk -X POST "https://localhost:4444/oauth2/token" \
+//     -u 'cc-client':'ClientCredentialsSecret' \
+//     -H 'Content-Type: application/x-www-form-urlencoded' \
+//     -d 'grant_type=client_credentials&scope=custom1 custom2' \
+//     | jq .
+
+export const getOauth2ClientCredentialsToken = async (
+    clientId,
+    clientSecret,
+    scope
+) => {
+    const oauth2TokenPath = process.env.OAUTH2_TOKEN_PATH ?? "UNDEFINED";
+    const contentType = "application/x-www-form-urlencoded";
+    const clientCredentials = Buffer.from(`${clientId}:${clientSecret}`).toString(
+        "base64"
+    );
+    const authorization = `Basic ${clientCredentials}`;
+    // prettier-ignore
+    const headers = {"Content-Type": contentType, "Authorization": authorization};
+    const body = `grant_type=client_credentials&scope=${scope}`;
+    const options = {headers, body};
+    const response = await auth.post(oauth2TokenPath, options).json();
+    return response;
+};
+
 export const withOauth2ClientCredentialsToken = (
     clientId,
     clientSecret,
@@ -90,6 +92,9 @@ export const withOauth2ClientCredentialsToken = (
                     token.expires_at = moment()
                         .add(token.expires_in, "seconds")
                         .subtract(5, "seconds");
+                    console.log(
+                        `[OAuth] New CC TOKEN till ${token.expires_at.format()}`
+                    );
                 }
                 const response = await callApi(token.access_token, ...args);
                 return response;
@@ -136,6 +141,95 @@ export const getOauth2AuthorizationCodeToken = async (
     const options = {headers, body};
     const response = await auth.post(oauth2TokenPath, options).json();
     return response;
+};
+
+// curl -sSLk -X POST "https://localhost:4444/oauth2/token" \
+//     -u 'ac-client':'AuthorizationCodeSecret' \
+//     -H 'Content-Type: application/x-www-form-urlencoded' \
+//     -d "grant_type=refresh_token&refresh_token=${TOKEN}"\
+// '&scope=offline_access openid custom1 custom2' \
+//     | jq .
+
+export const getOauth2RefreshToken = async (
+    clientId,
+    clientSecret,
+    scope,
+    refreshToken
+) => {
+    const oauth2TokenPath = process.env.OAUTH2_TOKEN_PATH ?? "UNDEFINED";
+    const contentType = "application/x-www-form-urlencoded";
+    const clientCredentials = Buffer.from(`${clientId}:${clientSecret}`).toString(
+        "base64"
+    );
+    const authorization = `Basic ${clientCredentials}`;
+    // prettier-ignore
+    const headers = {"Content-Type": contentType, "Authorization": authorization};
+    const body =
+        `grant_type=refresh_token&refresh_token=${refreshToken}` + `&scope=${scope}`;
+    const options = {headers, body};
+    const response = await auth.post(oauth2TokenPath, options).json();
+    return response;
+};
+
+export const withOauth2AuthorizationCodeToken = (
+    clientId,
+    clientSecret,
+    scope,
+    sessionId,
+    accessToken,
+    expiresAt,
+    refreshToken,
+    callApi
+) => {
+    return async (...args) => {
+        let retryCount = 0;
+        while (retryCount <= MAX_RETRY) {
+            try {
+                if (retryCount > 0 || moment().isAfter(expiresAt)) {
+                    const {
+                        access_token: newAccessToken,
+                        expires_in: newExpiresIn,
+                        id_token: newIdToken,
+                        refresh_token: newRefreshToken,
+                        scope: newGrantedScope,
+                    }: any = await getOauth2RefreshToken(
+                        clientId,
+                        clientSecret,
+                        scope,
+                        refreshToken
+                    );
+                    const {sid: newSessionId, sub: newSubject}: any = jwt.decode(
+                        newIdToken
+                    );
+                    const newExpiresAt = moment()
+                        .add(newExpiresIn, "seconds")
+                        .subtract(5, "seconds");
+                    const newSession = {
+                        sessionId: newSessionId,
+                        subject: newSubject,
+                        accessToken: newAccessToken,
+                        expiresAt: newExpiresAt,
+                        refreshToken: newRefreshToken,
+                        scope: newGrantedScope,
+                    };
+                    putSession(newSessionId, newSession);
+                    accessToken = newAccessToken;
+                    console.log(`[OAuth] New AC TOKEN till ${newExpiresAt.format()}`);
+                }
+                const response = await callApi(accessToken, ...args);
+                return response;
+            } catch (error) {
+                const httpError = parseHttpError(error);
+                if (![400, 401, 403].includes(httpError.statusCode)) {
+                    throw error;
+                }
+                if (retryCount === MAX_RETRY) {
+                    throw createRestifyError(httpError);
+                }
+            }
+            ++retryCount;
+        }
+    };
 };
 
 // curl -sSLk -X GET "https://localhost:4444/userinfo" \

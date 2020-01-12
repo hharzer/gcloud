@@ -11,12 +11,11 @@ export const getSession = (sessionId) => {
 
 export const sessionParser = (sessionCookieName) => {
     return (req, res, next) => {
-        const sessionId = req.cookies[sessionCookieName];
+        const sessionId = req?.cookies?.[sessionCookieName];
         if (sessionId) {
             const session = getSession(sessionId);
             req.session = session;
         }
-        console.log(req.session);
         next();
     };
 };

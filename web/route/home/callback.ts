@@ -26,7 +26,7 @@ const executeRequest = async (req, res, next) => {
             const {
                 access_token: accessToken,
                 expires_in: expiresIn,
-                id_token: jwtIdToken,
+                id_token: idToken,
                 refresh_token: refreshToken,
                 scope: grantedScope,
             }: any = await getOauth2AuthorizationCodeToken(
@@ -36,9 +36,9 @@ const executeRequest = async (req, res, next) => {
                 scope,
                 process.env.OAUTH2_AC_CLIENT_REDIRECT_URI
             );
-            const {sid: sessionId, sub: subject}: any = jwt.decode(jwtIdToken);
+            const {sid: sessionId, sub: subject}: any = jwt.decode(idToken);
             const expiresAt = moment()
-                .add(expiresIn)
+                .add(expiresIn, "seconds")
                 .subtract(5, "seconds");
             const session = {
                 sessionId,
@@ -55,7 +55,7 @@ const executeRequest = async (req, res, next) => {
                 httpOnly: true,
             };
             setCookie(res, {webSessionId: sessionId}, attributes);
-            const response = {redirectTo: "/"};
+            const response = {redirectTo: "/ac/users"};
             res.response = response;
         }
         next();

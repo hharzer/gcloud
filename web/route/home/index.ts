@@ -3,7 +3,7 @@ import {setCookie, deleteCookie} from "util/cookie";
 
 const executeRequest = async (req, res, next) => {
     const title = "Web - Home";
-    const userPath = "/users";
+    const userPath = "/cc/users";
     const loginPath = "/login";
     const response = {title, userPath, loginPath};
     res.response = response;

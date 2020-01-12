@@ -1,5 +1,7 @@
-import {addRoute as addGetUserRoute} from "route/user/getUser";
+import {addRoute as addCcGetUserRoute} from "route/user/ccGetUser";
+import {addRoute as addAcGetUserRoute} from "route/user/acGetUser";
 
 export const addUserRoute = (server, route) => {
-    addGetUserRoute(server, route);
+    addCcGetUserRoute(server, route);
+    addAcGetUserRoute(server, route);
 };
