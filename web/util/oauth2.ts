@@ -50,12 +50,13 @@ const createRestifyError = (httpError) => {
 // curl -sSLk -X POST "https://localhost:4444/oauth2/token" \
 //     -u 'cc-client':'ClientCredentialsSecret' \
 //     -H 'Content-Type: application/x-www-form-urlencoded' \
-//     -d 'grant_type=client_credentials&scope=custom1 custom2' \
+//     -d 'grant_type=client_credentials&audience=identity&scope=custom1 custom2' \
 //     | jq .
 
 export const getOauth2ClientCredentialsToken = async (
     clientId,
     clientSecret,
+    audience,
     scope
 ) => {
     const oauth2TokenPath = process.env.OAUTH2_TOKEN_PATH ?? "UNDEFINED";
@@ -66,7 +67,7 @@ export const getOauth2ClientCredentialsToken = async (
     const authorization = `Basic ${clientCredentials}`;
     // prettier-ignore
     const headers = {"Content-Type": contentType, "Authorization": authorization};
-    const body = `grant_type=client_credentials&scope=${scope}`;
+    const body = `grant_type=client_credentials&audience=${audience}&scope=${scope}`;
     const options = {headers, body};
     const response = await auth.post(oauth2TokenPath, options).json();
     return response;
@@ -75,6 +76,7 @@ export const getOauth2ClientCredentialsToken = async (
 export const withOauth2ClientCredentialsToken = (
     clientId,
     clientSecret,
+    audience,
     scope,
     callApi
 ) => {
@@ -87,6 +89,7 @@ export const withOauth2ClientCredentialsToken = (
                     token = await getOauth2ClientCredentialsToken(
                         clientId,
                         clientSecret,
+                        audience,
                         scope
                     );
                     token.expires_at = moment()

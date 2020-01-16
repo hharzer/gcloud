@@ -4,6 +4,7 @@ import {getUser} from "route/user/util/api";
 const getUserWithOauth2ClientCredentialsToken = withOauth2ClientCredentialsToken(
     process.env.OAUTH2_CC_CLIENT_ID,
     process.env.OAUTH2_CC_CLIENT_SECRET,
+    "identity",
     "custom1 custom2",
     getUser
 );
