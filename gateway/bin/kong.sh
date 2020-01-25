@@ -31,4 +31,4 @@ export KONG_PG_USER=kong
 export KONG_PG_PASSWORD='Password1!'
 export KONG_PG_DATABASE=kong
 
-kong migrations bootstrap -v
+kong migrations bootstrap
